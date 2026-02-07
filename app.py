@@ -11,34 +11,27 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
 
-    /* ส่วนตั้งค่าตามแผน (Planned) - ปรับสีพื้นหลังให้ข้อความเด่น */
+    /* ส่วนตั้งค่าตามแผน (Planned) */
     .stExpander {
         border: 2px solid #000000 !important;
         background-color: #eceff1 !important;
         border-radius: 10px !important;
     }
     
-    /* หัวข้อภายใน Expander ให้ดำเข้มอ่านง่าย */
+    /* หัวข้อภายใน Expander */
     .stExpander label {
         color: #000000 !important;
         font-weight: bold !important;
         font-size: 18px !important;
     }
 
-    /* ตกแต่ง Metric สรุปยอดรวม (High Contrast) */
-    [data-testid="stMetricValue"] { font-size: 36px !important; font-weight: 800 !important; color: #000 !important; }
-    [data-testid="stMetricLabel"] { font-size: 18px !important; font-weight: bold !important; color: #333 !important; }
+    /* ตกแต่ง Metric สรุปยอดรวม */
+    [data-testid="stMetricValue"] { font-size: 32px !important; font-weight: 800 !important; color: #000 !important; }
+    [data-testid="stMetricLabel"] { font-size: 16px !important; font-weight: bold !important; color: #333 !important; }
     
-    /* สีพื้นหลัง Metric แยกตามวัสดุ */
-    div[data-testid="stMetric"]:nth-child(1) { background-color: #eceff1; border: 2px solid #333; } 
-    div[data-testid="stMetric"]:nth-child(2) { background-color: #eceff1; border: 2px solid #333; } 
-    div[data-testid="stMetric"]:nth-child(3) { background-color: #eceff1; border: 2px solid #F59E0B; } 
-    div[data-testid="stMetric"]:nth-child(4) { background-color: #eceff1; border: 2px solid #10B981; } 
-    div[data-testid="stMetric"]:nth-child(5) { background-color: #eceff1; border: 2px solid #3B82F6; }
-
     /* ปรับช่อง Input ให้ใหญ่ชัดเจน */
     .stTextInput input, .stNumberInput input {
-        font-size: 20px !important;
+        font-size: 18px !important;
         font-weight: bold !important;
         border: 2px solid #000 !important;
     }
@@ -47,6 +40,7 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
+    # ตรวจสอบชื่อไฟล์ให้ตรงกับในเครื่องของคุณ
     file_name = "ตารางคำนวณอัตราราคางานคอนกรีตและหิน-กรมบัญชีกลาง.csv"
     for enc in ['cp874', 'tis-620', 'utf-8-sig']:
         try:
@@ -59,12 +53,12 @@ if 'calc_history' not in st.session_state:
     st.session_state.calc_history = []
 
 st.title("🏗️ ตารางคำนวณอัตรางานคอนกรีตและหิน")
-("ตามหลักเกณฑ์การคำนวณราคากลางงานก่อสร้างชลประทาน ฉบับปรับปรุงตามประกาศ ปี 2565")
+st.markdown("##### ตามหลักเกณฑ์การคำนวณราคากลางงานก่อสร้างชลประทาน ฉบับปรับปรุงตามประกาศ ปี 2565")
 
 try:
     df = load_data()
     if df is not None:
-        # --- ปรับเปลี่ยนชื่อช่องตามคำขอ ---
+        # ส่วนข้อมูลโครงการ
         col_p1, col_p2 = st.columns([1, 1])
         office_name = col_p1.text_input("🏢 สำนัก/โครงการ:", value="ระบุชื่อสำนักหรือโครงการ")
         project_work_name = col_p2.text_input("📄 ชื่องานโครงการ:", value="ระบุชื่องาน")
@@ -72,7 +66,7 @@ try:
         calc_date = datetime.now().strftime("%d/%m/%Y")
         st.caption(f"วันที่บันทึกระบบ: {calc_date}")
             
-        # ส่วนตั้งค่าแผนงาน
+        # 1. ส่วนตั้งค่าแผนงาน
         st.subheader("📊 1. ตั้งค่าปริมาณตามแผน (Planned)")
         with st.expander("📝 ปริมาณวัสดุที่ได้รับอนุมัติตามแผน", expanded=True):
             st.markdown("**กรุณาระบุปริมาณวัสดุตามแผน**")
@@ -84,26 +78,29 @@ try:
 
         st.divider()
 
-        # ส่วนเพิ่มรายการงาน
+        # 2. ส่วนเพิ่มรายการงาน
         st.subheader("➕ 2. รายการงานคอนกรีตและหิน")
         col_in1, col_in2, col_in3 = st.columns([2, 1, 1])
         work_list = df[0].dropna().unique().tolist()
         selected_work = col_in1.selectbox("เลือกงานก่อสร้าง:", work_list)
         quantity = col_in2.number_input("ปริมาณงานที่ทำ:", min_value=0.1, value=1.0)
         
-        if col_in3.button("➕ เพิ่มรายการ"):
+        if col_in3.button("➕ เพิ่มรายการ", use_container_width=True):
             selected_row = df[df[0] == selected_work].iloc[0]
             m_map = {"หินใหญ่": 2, "หินย่อย": 4, "ทรายหยาบ": 6, "ปูนซีเมนต์": 8, "หินคลุก": 10}
             temp_details = {}
             for m_name, idx in m_map.items():
                 try:
                     if idx < len(selected_row):
-                        rate_val = float(selected_row[idx])
+                        # ลบ comma ออกก่อนแปลงเป็น float
+                        val = str(selected_row[idx]).replace(',', '')
+                        rate_val = float(val)
                         if rate_val > 0: temp_details[m_name] = rate_val * quantity
                 except: continue
             st.session_state.calc_history.append({"ประเภทงาน": selected_work, "ปริมาณงาน": quantity, "รายละเอียด": temp_details})
             st.rerun()
 
+        # 3. รายการบันทึกสะสม
         if st.session_state.calc_history:
             st.subheader("📋 3. รายการบันทึกสะสม")
             for i, item in enumerate(st.session_state.calc_history):
@@ -114,7 +111,7 @@ try:
                         st.session_state.calc_history.pop(i)
                         st.rerun()
 
-            # ส่วนสรุปและเปรียบเทียบ
+            # 4. ส่วนสรุปและเปรียบเทียบ
             st.divider()
             st.subheader("📊 4. สรุปผลและเปรียบเทียบแผน")
             
@@ -144,33 +141,42 @@ try:
                 })
             st.table(pd.DataFrame(comp_rows))
 
-            # --- ส่วน EXPORT ข้อมูล ---
-            st.subheader("📤 5. ส่งออกรายงาน")
+            # 5. ส่วน EXPORT และ ลิงก์ภายนอก
+            st.subheader("📤 5. ส่งออกและเอกสารอ้างอิง")
             
+            # เตรียมข้อมูล Export
             df_detailed = pd.DataFrame([
                 {**{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน']}, **i['รายละเอียด']} 
                 for i in st.session_state.calc_history
             ]).fillna(0)
             
             df_comp = pd.DataFrame(comp_rows)
-            
-            # ปรับหัวรายงานในไฟล์ Export
             output_text = f"สำนัก/โครงการ: {office_name}\nชื่องานโครงการ: {project_work_name}\nวันที่บันทึก: {calc_date}\n\n"
             output_text += "--- รายละเอียดงานย่อย ---\n" + df_detailed.to_csv(index=False)
             output_text += "\n--- สรุปยอดรวมและแผนงาน ---\n" + df_comp.to_csv(index=False)
             
             col_ex1, col_ex2 = st.columns(2)
             col_ex1.download_button(
-                label="📥 ดาวน์โหลดไฟล์สรุปทั้งหมด",
+                label="📥 ดาวน์โหลดไฟล์สรุปทั้งหมด (CSV)",
                 data=output_text.encode('utf-8-sig'),
                 file_name=f'Report_{project_work_name}.csv',
                 mime='text/csv',
                 use_container_width=True
             )
-            if col_ex2.button("🚫 ล้างข้อมูลทั้งหมด"):
+            if col_ex2.button("🚫 ล้างข้อมูลทั้งหมด", use_container_width=True):
                 st.session_state.calc_history = []
                 st.rerun()
+
+            # --- เพิ่มส่วนลิงก์ Google Drive ---
+            st.markdown("---")
+            st.info("💡 **เอกสารประกอบการใช้งาน**")
+            st.link_button(
+                "🔗 คลิกเพื่อดูเอกสารอ้างอิง (Google Drive)", 
+                "https://drive.google.com/file/d/1tCep-NffAYB2QtDaPo7b2RwTuy7O_aw8/view", 
+                use_container_width=True
+            )
+
     else:
-        st.error("❌ ไม่พบไฟล์ เทสตาราง.csv")
+        st.error("❌ ไม่พบไฟล์ CSV กรุณาตรวจสอบว่าไฟล์ 'ตารางคำนวณอัตราราคางานคอนกรีตและหิน-กรมบัญชีกลาง.csv' อยู่ในโฟลเดอร์เดียวกับโค้ด")
 except Exception as e:
     st.error(f"⚠️ เกิดข้อผิดพลาด: {e}")
