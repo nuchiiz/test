@@ -47,7 +47,7 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
-    file_name = "ตารางคำนวณอัตราราคางานคอนกรีตและหิน-กรมบัญชีกลาง.csv"
+    file_name = "ตารางคำนวณอัตราราคางานคอนกรีตและหิน กรมบัญชีกลาง.csv"
     for enc in ['cp874', 'tis-620', 'utf-8-sig']:
         try:
             df = pd.read_csv(file_name, skiprows=2, header=None, encoding=enc, on_bad_lines='skip')
