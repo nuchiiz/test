@@ -5,59 +5,53 @@ from datetime import datetime
 # 1. ตั้งค่าหน้าจอ
 st.set_page_config(page_title="ระบบควบคุมวัสดุ Pro V.2", layout="wide")
 
-# CSS สำหรับ UI: หัวข้อชิดซ้าย / ตารางตรงกลาง / ปรับช่องระดับเดียวกัน
+# CSS สำหรับ UI: บังคับให้ช่อง Input และปุ่มอยู่ในระดับเดียวกัน (Alignment)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
     
-    /* ส่วนประกอบทั่วไป */
-    .stExpander { border: 2px solid #000000 !important; background-color: #f8f9fa !important; border-radius: 10px !important; }
-    .stTextInput input, .stNumberInput input { font-size: 18px !important; font-weight: bold !important; border: 2px solid #000 !important; }
-    
-    /* 1. หัวข้อชิดซ้าย */
+    /* 1. จัดการให้ช่อง Input และปุ่มใน Column เดียวกันวางตัวที่ระดับฐานเดียวกัน */
+    [data-testid="column"] {
+        display: flex;
+        align-items: flex-end; /* จัดวางวัตถุชิดขอบล่างของแถว */
+    }
+
+    /* 2. ปรับแต่งความสวยงามของกล่องข้อความ */
+    .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
+        font-size: 18px !important;
+        font-weight: bold !important;
+        border: 2px solid #000 !important;
+        border-radius: 8px !important;
+    }
+
+    /* 3. ปรับแต่งปุ่มให้พอดีกับช่องกรอก */
+    div.stButton > button {
+        width: 100%;
+        height: 3.0rem; /* ปรับค่าให้เท่ากับความสูงเฉลี่ยของ Input Box */
+        border-radius: 8px !important;
+        background-color: #007bff;
+        color: white;
+        border: none;
+    }
+
+    /* 4. หัวข้อชิดซ้าย */
     h1, h2, h3, h5, .stMarkdown p, .stCaption { 
         text-align: left !important; 
     }
-    
-    /* 2. บังคับให้ช่อง Input และปุ่มในแถวเดียวกัน (Column) อยู่ระดับเดียวกัน */
-    [data-testid="column"] {
-        display: flex;
-        align-items: flex-end; /* ดันทุกอย่างลงมาที่ฐานเดียวกัน */
-    }
-    
-    /* ปรับแต่งปุ่มให้พอดีกับช่องกรอก */
-    div.stButton > button {
-        width: 100%;
-        height: 3.1rem; /* ปรับความสูงปุ่มให้ใกล้เคียงกับ input */
-    }
 
-    /* 3. Metrics กึ่งกลาง */
-    [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
-        text-align: center;
-        justify-content: center;
-    }
-    [data-testid="stMetric"] {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    /* 4. ตารางตรงกลาง */
-    .stTable td, .stTable th {
-        text-align: center !important;
-        vertical-align: middle !important;
-    }
-    .stTable { 
-        width: 100%;
-        margin-left: auto;
-        margin-right: auto;
-    }
+    /* 5. Metrics และตารางกึ่งกลาง */
+    [data-testid="stMetricValue"], [data-testid="stMetricLabel"] { text-align: center; justify-content: center; }
+    [data-testid="stMetric"] { display: flex; flex-direction: column; align-items: center; }
+    .stTable td, .stTable th { text-align: center !important; vertical-align: middle !important; }
+    .stTable { width: 100%; margin-left: auto; margin-right: auto; }
+    .stExpander { border: 2px solid #000000 !important; background-color: #f8f9fa !important; border-radius: 10px !important; }
     </style>
 """, unsafe_allow_html=True)
 
 @st.cache_data
 def load_data():
+    # ปรับชื่อไฟล์ตามที่คุณอัปโหลดล่าสุด
     file_name = "ตารางคำนวณอัตราราคางานคอนกรีตและหิน-กรมบัญชีกลาง3.csv"
     for enc in ['cp874', 'tis-620', 'utf-8-sig']:
         try:
@@ -81,12 +75,11 @@ try:
         office_name = col_p1.text_input("🏢 สำนัก/โครงการ:", placeholder="พิมพ์ชื่อสำนัก...")
         project_work_name = col_p2.text_input("📄 ชื่องานโครงการ:", placeholder="พิมพ์ชื่อโครงการ...")
         
-        calc_date = datetime.now().strftime("%d/%m/%Y")
-        st.caption(f"วันที่บันทึกระบบ: {calc_date}")
+        st.caption(f"วันที่บันทึกระบบ: {datetime.now().strftime('%d/%m/%Y')}")
             
         p_names = ["หินใหญ่", "หินย่อย", "ทรายหยาบ", "ปูนซีเมนต์", "หินคลุก", "เหล็กเส้นเสริมคอนกรีต", "ลวดผูกเหล็กเสริม"]
 
-        # 1. แผนงาน
+        # 1. แผนงาน (ช่องว่างพร้อมกรอก)
         st.markdown("### 📊 1. ตั้งค่าปริมาณตามแผน (Planned)")
         with st.expander("📝 ระบุปริมาณวัสดุที่ได้รับอนุมัติ", expanded=True):
             col_plan = st.columns(len(p_names)) 
@@ -97,14 +90,15 @@ try:
 
         st.divider()
 
-        # 2. รายการงาน (ใช้การจัดระดับเดียวกัน)
+        # 2. รายการงาน (จัดระดับให้อยู่แนวเดียวกันด้วย CSS flex-end)
         st.markdown("### ➕ 2. รายการงานก่อสร้าง")
-        col_in1, col_in2, col_in3 = st.columns([2.5, 1, 1])
+        col_in1, col_in2, col_in3 = st.columns([2.5, 1, 1]) 
         
-        # ใส่ Label ปกติ แต่อัลกอริทึม CSS ด้านบนจะดันปุ่มใน col_in3 มาให้เท่ากันเอง
-        selected_work = col_in1.selectbox("เลือกประเภทงาน:", df[0].dropna().unique().tolist())
+        work_list = df[0].dropna().unique().tolist()
+        selected_work = col_in1.selectbox("เลือกประเภทงาน:", work_list)
         q_val = col_in2.number_input("ปริมาณงานที่ทำจริง:", min_value=0.0, value=None, placeholder="ระบุตัวเลข...", key="work_qty")
         
+        # ปุ่ม "เพิ่มรายการ"
         if col_in3.button("➕ เพิ่มรายการ", use_container_width=True):
             if q_val is not None and q_val > 0:
                 selected_row = df[df[0] == selected_work].iloc[0]
@@ -144,7 +138,7 @@ try:
                 "แผนงาน (Planned)": planned_values[name],
                 "คำนวณจริง (Actual)": totals[name],
                 "ส่วนต่าง (+เหลือ/-เกิน)": planned_values[name] - totals[name],
-                "สถานะ": "✅ น้อยกว่าหรือเท่ากับ" if (planned_values[name] - totals[name]) >= 0 else "⚠️ เกินกว่าแผน"
+                "สถานะ": "✅ ปกติ" if (planned_values[name] - totals[name]) >= 0 else "⚠️ เกินกว่าแผน"
             } for name in p_names])
 
             def style_center(v):
@@ -165,9 +159,7 @@ try:
 
             st.divider()
             st.link_button("🔗 เปิดเอกสารอ้างอิงหลักเกณฑ์ราคากลาง", "https://drive.google.com/file/d/1tCep-NffAYB2QtDaPo7b2RwTuy7O_aw8/view", use_container_width=True)
-
     else:
         st.error("❌ ไม่พบไฟล์ข้อมูล CSV ในระบบ")
-
 except Exception as e:
     st.error(f"⚠️ เกิดข้อผิดพลาด: {str(e)}")
