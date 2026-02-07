@@ -22,16 +22,16 @@ st.markdown("""
     .stExpander label {
         color: #000000 !important;
         font-weight: bold !important;
-        font-size: 18px !important;
+        font-size: 16px !important;
     }
 
     /* ตกแต่ง Metric สรุปยอดรวม */
-    [data-testid="stMetricValue"] { font-size: 32px !important; font-weight: 800 !important; color: #000 !important; }
+    [data-testid="stMetricValue"] { font-size: 26px !important; font-weight: 800 !important; color: #000 !important; }
     [data-testid="stMetricLabel"] { font-size: 16px !important; font-weight: bold !important; color: #333 !important; }
     
     /* ปรับช่อง Input ให้ใหญ่ชัดเจน */
     .stTextInput input, .stNumberInput input {
-        font-size: 18px !important;
+        font-size: 16px !important;
         font-weight: bold !important;
         border: 2px solid #000 !important;
     }
