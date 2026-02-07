@@ -5,7 +5,7 @@ from datetime import datetime
 # 1. ตั้งค่าหน้าจอ
 st.set_page_config(page_title="ระบบควบคุมวัสดุ Pro", layout="wide")
 
-# ปรับปรุง CSS ให้สวยงามและอ่านง่าย
+# CSS สำหรับความสวยงาม
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
@@ -43,41 +43,44 @@ try:
         calc_date = datetime.now().strftime("%d/%m/%Y")
         st.caption(f"วันที่บันทึกระบบ: {calc_date}")
             
-        # 1. ตั้งค่าแผนงาน (Planned) - แก้ไขบรรทัดที่ 49 ที่เคย Error
+        # 1. ตั้งค่าแผนงาน (Planned) - ปรับเป็นช่องว่าง
         st.subheader("📊 1. ตั้งค่าปริมาณตามแผน (Planned)")
         with st.expander("📝 ปริมาณวัสดุที่ได้รับอนุมัติตามแผน", expanded=True):
             col_plan = st.columns(5)
             p_names = ["หินใหญ่", "หินย่อย", "ทรายหยาบ", "ปูนซีเมนต์", "หินคลุก"]
             planned_values = {}
             for i, name in enumerate(p_names):
-                planned_values[name] = col_plan[i].number_input(f"{name}", min_value=0.0, value=0.0, key=f"p_{i}")
+                # ใช้ value=None เพื่อให้ช่องว่าง และใช้ placeholder แทน
+                val = col_plan[i].number_input(f"{name}", min_value=0.0, value=None, placeholder="กรอกตัวเลข...", key=f"p_{i}")
+                planned_values[name] = val if val is not None else 0.0
 
         st.divider()
 
-        # 2. เพิ่มรายการงาน
+        # 2. เพิ่มรายการงาน - ปรับช่องปริมาณงานให้ว่าง
         st.subheader("➕ 2. รายการงานคอนกรีตและหิน")
         col_in1, col_in2, col_in3 = st.columns([2, 1, 1])
         
         work_list = df[0].dropna().unique().tolist()
         selected_work = col_in1.selectbox("เลือกงานก่อสร้าง:", work_list)
-        quantity = col_in2.number_input("ปริมาณงานที่ทำ:", min_value=0.0, value=0.0)
+        # ปรับ value=None เพื่อให้ช่องว่าง
+        q_val = col_in2.number_input("ปริมาณงานที่ทำ:", min_value=0.0, value=None, placeholder="กรอกตัวเลข...")
         
         if col_in3.button("➕ เพิ่มรายการ", use_container_width=True):
-            if quantity > 0:
+            if q_val is not None and q_val > 0:
                 selected_row = df[df[0] == selected_work].iloc[0]
                 m_map = {"หินใหญ่": 2, "หินย่อย": 4, "ทรายหยาบ": 6, "ปูนซีเมนต์": 8, "หินคลุก": 10}
                 temp_details = {}
                 for m_name, idx in m_map.items():
                     try:
                         if idx < len(selected_row):
-                            val = str(selected_row[idx]).replace(',', '')
-                            rate_val = float(val)
-                            if rate_val > 0: temp_details[m_name] = rate_val * quantity
+                            raw_val = str(selected_row[idx]).replace(',', '')
+                            rate_val = float(raw_val)
+                            if rate_val > 0: temp_details[m_name] = rate_val * q_val
                     except: continue
-                st.session_state.calc_history.append({"ประเภทงาน": selected_work, "ปริมาณงาน": quantity, "รายละเอียด": temp_details})
+                st.session_state.calc_history.append({"ประเภทงาน": selected_work, "ปริมาณงาน": q_val, "รายละเอียด": temp_details})
                 st.rerun()
             else:
-                st.warning("⚠️ กรุณาระบุปริมาณงานมากกว่า 0")
+                st.warning("⚠️ กรุณากรอกปริมาณงานที่ต้องการคำนวณ")
 
         # 3. รายการบันทึกสะสม
         if st.session_state.calc_history:
@@ -117,7 +120,7 @@ try:
                 })
             st.table(pd.DataFrame(comp_rows))
 
-            # 5. Export และ Link
+            # 5. Export
             st.subheader("📤 5. ส่งออกและเอกสารอ้างอิง")
             col_ex1, col_ex2 = st.columns(2)
             
