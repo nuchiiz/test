@@ -84,13 +84,13 @@ try:
         st.divider()
 
         # ส่วนเพิ่มรายการงาน
-        st.subheader("➕ 2. เพิ่มรายการงานที่ทำจริง")
+        st.subheader("➕ 2. รายการงาน")
         col_in1, col_in2, col_in3 = st.columns([2, 1, 1])
         work_list = df[0].dropna().unique().tolist()
         selected_work = col_in1.selectbox("เลือกงานก่อสร้าง:", work_list)
         quantity = col_in2.number_input("ปริมาณงานที่ทำ:", min_value=0.1, value=1.0)
         
-        if col_in3.button("➕ เพิ่มเข้าโครงการ"):
+        if col_in3.button("➕ เพิ่มรายการ"):
             selected_row = df[df[0] == selected_work].iloc[0]
             m_map = {"หินใหญ่": 2, "หินย่อย": 4, "ทรายหยาบ": 6, "ปูนซีเมนต์": 8, "หินคลุก": 10}
             temp_details = {}
