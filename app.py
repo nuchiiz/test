@@ -14,7 +14,7 @@ st.markdown("""
     /* ส่วนตั้งค่าตามแผน (Planned) - ปรับสีพื้นหลังให้ข้อความเด่น */
     .stExpander {
         border: 2px solid #000000 !important;
-        background-color: #01579b !important;
+        background-color: #0288d1 !important;
         border-radius: 10px !important;
     }
     
