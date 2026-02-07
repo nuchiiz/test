@@ -50,7 +50,7 @@ try:
             p_names = ["หินใหญ่", "หินย่อย", "ทรายหยาบ", "ปูนซีเมนต์", "หินคลุก"]
             planned_values = {}
             for i, name in enumerate(p_names):
-                val = col_plan[i].number_input(f"{name}", min_value=0.0, value=None, placeholder="กรอกเลข...", key=f"p_{i}")
+                val = col_plan[i].number_input(f"{name}", min_value=0.0, value=None, placeholder="กรอกจำนวน...", key=f"p_{i}")
                 planned_values[name] = val if val is not None else 0.0
 
         st.divider()
