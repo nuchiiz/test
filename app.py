@@ -158,7 +158,7 @@ try:
                 st.session_state.calc_history = []; st.rerun()
 
             st.divider()
-            st.link_button("🔗 เปิดเอกสารอ้างอิงหลักเกณฑ์ราคากลาง", "https://drive.google.com/file/d/1tCep-NffAYB2QtDaPo7b2RwTuy7O_aw8/view", use_container_width=True)
+            st.link_button("🔗 หลักเกณฑ์และวิธีการกําหนดราคากลางงานก่อสร้าง Update ล่าสุด ปรับปรุงล่าสุดถึงประกาศฯ ฉบับที่ 5 (บังคับใช้ 2 สิงหาคม 2565)", "https://drive.google.com/file/d/1tCep-NffAYB2QtDaPo7b2RwTuy7O_aw8/view", use_container_width=True)
     else:
         st.error("❌ ไม่พบไฟล์ข้อมูล CSV ในระบบ")
 except Exception as e:
