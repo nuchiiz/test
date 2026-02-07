@@ -140,7 +140,7 @@ try:
                     "แผนงาน (Planned)": f"{p_val:,.2f}",
                     "คำนวณจริง (Actual)": f"{a_val:,.2f}",
                     "ส่วนต่าง (+เหลือ / -เกิน)": f"{diff:,.2f}",
-                    "สถานะ": "✅ ปกติ" if diff >= 0 else "⚠️ เกินแผน"
+                    "สถานะ": "✅ น้อยกว่าหรือเท่ากับแผน" if diff >= 0 else "⚠️ เกินแผน"
                 })
             st.table(pd.DataFrame(comp_rows))
 
