@@ -30,11 +30,11 @@ st.markdown("""
     [data-testid="stMetricLabel"] { font-size: 18px !important; font-weight: bold !important; color: #333 !important; }
     
     /* สีพื้นหลัง Metric แยกตามวัสดุ */
-    div[data-testid="stMetric"]:nth-child(1) { background-color: #D1D5DB; border: 2px solid #333; } 
-    div[data-testid="stMetric"]:nth-child(2) { background-color: #9CA3AF; border: 2px solid #333; } 
-    div[data-testid="stMetric"]:nth-child(3) { background-color: #FDE68A; border: 2px solid #F59E0B; } 
-    div[data-testid="stMetric"]:nth-child(4) { background-color: #A7F3D0; border: 2px solid #10B981; } 
-    div[data-testid="stMetric"]:nth-child(5) { background-color: #BFDBFE; border: 2px solid #3B82F6; }
+    div[data-testid="stMetric"]:nth-child(1) { background-color: #03a9f4; border: 2px solid #333; } 
+    div[data-testid="stMetric"]:nth-child(2) { background-color: #03a9f4; border: 2px solid #333; } 
+    div[data-testid="stMetric"]:nth-child(3) { background-color: #03a9f4; border: 2px solid #F59E0B; } 
+    div[data-testid="stMetric"]:nth-child(4) { background-color: #03a9f4; border: 2px solid #10B981; } 
+    div[data-testid="stMetric"]:nth-child(5) { background-color: #03a9f4; border: 2px solid #3B82F6; }
 
     /* ปรับช่อง Input ให้ใหญ่ชัดเจน */
     .stTextInput input, .stNumberInput input {
