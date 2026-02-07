@@ -32,7 +32,6 @@ st.markdown("""
     }
     
     /* 3. จัดการตาราง (Table) */
-    /* บังคับให้ตัวหนังสือในตารางทั้งหมด (Header และ Cell) อยู่ตรงกลาง */
     .stTable td, .stTable th {
         text-align: center !important;
         vertical-align: middle !important;
@@ -58,7 +57,7 @@ def load_data():
 if 'calc_history' not in st.session_state:
     st.session_state.calc_history = []
 
-# --- หัวข้อ (ชิดซ้ายตาม CSS) ---
+# --- หัวข้อ ---
 st.markdown("<h1>🏗️ ระบบควบคุมวัสดุชลประทาน (V.2)</h1>", unsafe_allow_html=True)
 st.markdown("<h5>อ้างอิงประกาศกรมบัญชีกลาง ฉบับปรับปรุง ปี 2565</h5>", unsafe_allow_html=True)
 
@@ -75,32 +74,37 @@ try:
             
         p_names = ["หินใหญ่", "หินย่อย", "ทรายหยาบ", "ปูนซีเมนต์", "หินคลุก", "เหล็กเส้นเสริมคอนกรีต", "ลวดผูกเหล็กเสริม"]
 
-        # 1. แผนงาน
+        # 1. แผนงาน (ปรับปรุงช่องกรอกให้เป็นค่าว่าง)
         st.markdown("### 📊 1. ตั้งค่าปริมาณตามแผน (Planned)")
         with st.expander("📝 ระบุปริมาณวัสดุที่ได้รับอนุมัติ", expanded=True):
             col_plan = st.columns(len(p_names)) 
-            planned_values = {name: col_plan[i].number_input(f"{name}", min_value=0.0, key=f"p_{i}") or 0.0 for i, name in enumerate(p_names)}
+            planned_values = {}
+            for i, name in enumerate(p_names):
+                # ใช้ value=None และ placeholder เพื่อให้เป็นช่องว่างพร้อมพิมพ์
+                val = col_plan[i].number_input(f"{name}", min_value=0.0, value=None, placeholder="กรอกแผน...", key=f"p_{i}")
+                planned_values[name] = val if val is not None else 0.0
 
         st.divider()
 
-        # 2. รายการงาน
+        # 2. รายการงาน (ปรับปรุงช่องกรอกปริมาณงาน)
         st.markdown("### ➕ 2. รายการงานก่อสร้าง")
         col_in1, col_in2, col_in3 = st.columns([2, 1, 1])
         work_list = df[0].dropna().unique().tolist()
         selected_work = col_in1.selectbox("เลือกประเภทงาน:", work_list)
-        q_val = col_in2.number_input("ปริมาณงานที่ทำจริง:", min_value=0.0, placeholder="กรอกตัวเลข...")
+        # ปรับเป็นค่าว่างเช่นกัน
+        q_val = col_in2.number_input("ปริมาณงานที่ทำจริง:", min_value=0.0, value=None, placeholder="กรอกปริมาณงาน...", key="work_qty")
         
         if col_in3.button("➕ เพิ่มรายการ", use_container_width=True):
-            if q_val and q_val > 0:
+            if q_val is not None and q_val > 0:
                 selected_row = df[df[0] == selected_work].iloc[0]
                 m_map = {"หินใหญ่": 2, "หินย่อย": 4, "ทรายหยาบ": 6, "ปูนซีเมนต์": 8, "หินคลุก": 10, "เหล็กเส้นเสริมคอนกรีต": 12, "ลวดผูกเหล็กเสริม": 14}
                 temp_details = {}
                 for m_name, idx in m_map.items():
                     if idx < len(selected_row):
                         try:
-                            val = str(selected_row[idx]).replace(',', '').replace('-', '').strip()
-                            if val and val != "nan":
-                                temp_details[m_name] = float(val) * q_val
+                            val_str = str(selected_row[idx]).replace(',', '').replace('-', '').strip()
+                            if val_str and val_str != "nan":
+                                temp_details[m_name] = float(val_str) * q_val
                         except: continue
                 st.session_state.calc_history.append({"ประเภทงาน": selected_work, "ปริมาณงาน": q_val, "รายละเอียด": temp_details})
                 st.rerun()
@@ -121,12 +125,10 @@ try:
             
             totals = {k: sum(item['รายละเอียด'].get(k, 0.0) for item in st.session_state.calc_history) for k in p_names}
 
-            # Metrics
             m_cols = st.columns(4) 
             for i, name in enumerate(p_names):
                 m_cols[i % 4].metric(label=name, value=f"{totals[name]:,.2f}")
 
-            # สร้าง DataFrame เปรียบเทียบ
             df_comp = pd.DataFrame([{
                 "รายการวัสดุ": name,
                 "แผนงาน (Planned)": planned_values[name],
@@ -135,17 +137,13 @@ try:
                 "สถานะ": "✅ น้อยกว่าหรือเท่ากับแผน" if (planned_values[name] - totals[name]) >= 0 else "⚠️ เกินกว่าแผน"
             } for name in p_names])
 
-            # ฟังก์ชันแต่งสีตัวเลขกึ่งกลาง
             def style_center(v):
                 color = 'red' if isinstance(v, (int, float)) and v < 0 else ('green' if isinstance(v, (int, float)) and v > 0 else 'black')
                 return f'color: {color}; font-weight: bold; text-align: center;'
 
-            # แสดงตาราง (ทุกอย่างตรงกลาง)
             st.table(df_comp.style.format({
                 "แผนงาน (Planned)": "{:,.2f}", "คำนวณจริง (Actual)": "{:,.2f}", "ส่วนต่าง (+เหลือ/-เกิน)": "{:,.2f}"
-            }).set_properties(**{
-                'text-align': 'center'
-            }).applymap(style_center, subset=["ส่วนต่าง (+เหลือ/-เกิน)"]))
+            }).set_properties(**{'text-align': 'center'}).applymap(style_center, subset=["ส่วนต่าง (+เหลือ/-เกิน)"]))
 
             # 5. Export
             st.markdown("### 📤 5. ส่งออกเอกสาร")
