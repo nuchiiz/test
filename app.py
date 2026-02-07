@@ -5,19 +5,20 @@ from datetime import datetime
 # 1. ตั้งค่าหน้าจอ
 st.set_page_config(page_title="ระบบควบคุมวัสดุ Pro V.2", layout="wide")
 
-# CSS สำหรับ UI: บังคับให้ช่อง Input และปุ่มอยู่ในระดับเดียวกัน (Alignment)
+# CSS ปรับแต่งระดับ Alignment ของกล่องข้อความและปุ่ม
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
-    
-    /* 1. จัดการให้ช่อง Input และปุ่มใน Column เดียวกันวางตัวที่ระดับฐานเดียวกัน */
+
+    /* บังคับให้ Column จัดวางวัตถุชิดขอบล่าง (Align Bottom) */
+    /* วิธีนี้จะทำให้ปุ่มที่ไม่มี Label ตกลงมาเท่ากับช่องที่มี Label พอดี */
     [data-testid="column"] {
         display: flex;
-        align-items: flex-end; /* จัดวางวัตถุชิดขอบล่างของแถว */
+        align-items: flex-end;
     }
 
-    /* 2. ปรับแต่งความสวยงามของกล่องข้อความ */
+    /* ปรับแต่งช่อง Input ให้ดูชัดเจน */
     .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
         font-size: 18px !important;
         font-weight: bold !important;
@@ -25,33 +26,27 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* 3. ปรับแต่งปุ่มให้พอดีกับช่องกรอก */
+    /* ปรับความสูงปุ่มให้สัมพันธ์กับความสูงของช่องกรอก */
     div.stButton > button {
         width: 100%;
-        height: 3.0rem; /* ปรับค่าให้เท่ากับความสูงเฉลี่ยของ Input Box */
+        height: 3.0rem; 
         border-radius: 8px !important;
-        background-color: #007bff;
-        color: white;
-        border: none;
+        font-weight: bold !important;
     }
 
-    /* 4. หัวข้อชิดซ้าย */
-    h1, h2, h3, h5, .stMarkdown p, .stCaption { 
-        text-align: left !important; 
-    }
-
-    /* 5. Metrics และตารางกึ่งกลาง */
-    [data-testid="stMetricValue"], [data-testid="stMetricLabel"] { text-align: center; justify-content: center; }
-    [data-testid="stMetric"] { display: flex; flex-direction: column; align-items: center; }
-    .stTable td, .stTable th { text-align: center !important; vertical-align: middle !important; }
-    .stTable { width: 100%; margin-left: auto; margin-right: auto; }
+    /* ส่วนหัวข้อและตาราง */
+    h1, h2, h3, h5 { text-align: left !important; }
+    .stTable { width: 100%; }
     .stExpander { border: 2px solid #000000 !important; background-color: #f8f9fa !important; border-radius: 10px !important; }
+    
+    /* ปรับแต่งตารางและ Metric */
+    [data-testid="stMetricValue"] { text-align: center; }
     </style>
 """, unsafe_allow_html=True)
 
 @st.cache_data
 def load_data():
-    # ปรับชื่อไฟล์ตามที่คุณอัปโหลดล่าสุด
+    # เปลี่ยนชื่อไฟล์ให้ตรงกับที่คุณใช้จริง
     file_name = "ตารางคำนวณอัตราราคางานคอนกรีตและหิน-กรมบัญชีกลาง3.csv"
     for enc in ['cp874', 'tis-620', 'utf-8-sig']:
         try:
@@ -79,27 +74,26 @@ try:
             
         p_names = ["หินใหญ่", "หินย่อย", "ทรายหยาบ", "ปูนซีเมนต์", "หินคลุก", "เหล็กเส้นเสริมคอนกรีต", "ลวดผูกเหล็กเสริม"]
 
-        # 1. แผนงาน (ช่องว่างพร้อมกรอก)
+        # 1. แผนงาน
         st.markdown("### 📊 1. ตั้งค่าปริมาณตามแผน (Planned)")
         with st.expander("📝 ระบุปริมาณวัสดุที่ได้รับอนุมัติ", expanded=True):
             col_plan = st.columns(len(p_names)) 
             planned_values = {}
             for i, name in enumerate(p_names):
-                val = col_plan[i].number_input(f"{name}", min_value=0.0, value=None, placeholder="กรอก...", key=f"p_{i}")
+                val = col_plan[i].number_input(f"{name}", min_value=0.0, value=None, placeholder="0.00", key=f"p_{i}")
                 planned_values[name] = val if val is not None else 0.0
 
         st.divider()
 
-        # 2. รายการงาน (จัดระดับให้อยู่แนวเดียวกันด้วย CSS flex-end)
+        # 2. รายการงานก่อสร้าง (จุดที่ปรับระดับให้เท่ากัน)
         st.markdown("### ➕ 2. รายการงานก่อสร้าง")
-        col_in1, col_in2, col_in3 = st.columns([2.5, 1, 1]) 
+        col_in1, col_in2, col_in3 = st.columns([3, 1.5, 1]) # ปรับอัตราส่วนให้เหมาะสม
         
         work_list = df[0].dropna().unique().tolist()
         selected_work = col_in1.selectbox("เลือกประเภทงาน:", work_list)
         q_val = col_in2.number_input("ปริมาณงานที่ทำจริง:", min_value=0.0, value=None, placeholder="ระบุตัวเลข...", key="work_qty")
         
-        # ปุ่ม "เพิ่มรายการ"
-        if col_in3.button("➕ เพิ่มรายการ", use_container_width=True):
+        if col_in3.button("➕ เพิ่มรายการ", use_container_width=True, type="primary"):
             if q_val is not None and q_val > 0:
                 selected_row = df[df[0] == selected_work].iloc[0]
                 m_map = {"หินใหญ่": 2, "หินย่อย": 4, "ทรายหยาบ": 6, "ปูนซีเมนต์": 8, "หินคลุก": 10, "เหล็กเส้นเสริมคอนกรีต": 12, "ลวดผูกเหล็กเสริม": 14}
@@ -129,9 +123,9 @@ try:
             st.markdown("### 📊 4. สรุปผลและเปรียบเทียบแผนงาน")
             
             totals = {k: sum(item['รายละเอียด'].get(k, 0.0) for item in st.session_state.calc_history) for k in p_names}
-            m_cols = st.columns(4) 
+            m_cols = st.columns(len(p_names)) 
             for i, name in enumerate(p_names):
-                m_cols[i % 4].metric(label=name, value=f"{totals[name]:,.2f}")
+                m_cols[i].metric(label=name, value=f"{totals[name]:,.2f}")
 
             df_comp = pd.DataFrame([{
                 "รายการวัสดุ": name,
@@ -141,24 +135,24 @@ try:
                 "สถานะ": "✅ ปกติ" if (planned_values[name] - totals[name]) >= 0 else "⚠️ เกินกว่าแผน"
             } for name in p_names])
 
-            def style_center(v):
-                color = 'red' if isinstance(v, (int, float)) and v < 0 else ('green' if isinstance(v, (int, float)) and v > 0 else 'black')
-                return f'color: {color}; font-weight: bold; text-align: center;'
+            def style_diff(v):
+                color = 'red' if isinstance(v, (int, float)) and v < 0 else 'green'
+                return f'color: {color}; font-weight: bold;'
 
             st.table(df_comp.style.format({
                 "แผนงาน (Planned)": "{:,.2f}", "คำนวณจริง (Actual)": "{:,.2f}", "ส่วนต่าง (+เหลือ/-เกิน)": "{:,.2f}"
-            }).set_properties(**{'text-align': 'center'}).applymap(style_center, subset=["ส่วนต่าง (+เหลือ/-เกิน)"]))
+            }).applymap(style_diff, subset=["ส่วนต่าง (+เหลือ/-เกิน)"]))
 
-            # 5. Export
+            # 5. ส่งออกเอกสาร (ปรับระดับปุ่มให้เท่ากัน)
             st.markdown("### 📤 5. ส่งออกเอกสาร")
-            c_ex1, c_ex2 = st.columns(2)
+            c_ex1, c_ex2 = st.columns([1, 1]) # ใช้ column เพื่อให้ CSS align-bottom ทำงาน
+            
             csv_data = pd.DataFrame([{"งาน": i['ประเภทงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history]).to_csv(index=False).encode('utf-8-sig')
             c_ex1.download_button("📥 ดาวน์โหลด CSV", csv_data, f'Summary_{datetime.now().strftime("%Y%m%d")}.csv', "text/csv", use_container_width=True)
-            if c_ex2.button("🚫 ล้างข้อมูล", use_container_width=True):
+            
+            if c_ex2.button("🚫 ล้างข้อมูล", use_container_width=True, type="secondary"):
                 st.session_state.calc_history = []; st.rerun()
 
-            st.divider()
-            st.link_button("🔗 เปิดเอกสารอ้างอิงหลักเกณฑ์ราคากลาง", "https://drive.google.com/file/d/1tCep-NffAYB2QtDaPo7b2RwTuy7O_aw8/view", use_container_width=True)
     else:
         st.error("❌ ไม่พบไฟล์ข้อมูล CSV ในระบบ")
 except Exception as e:
