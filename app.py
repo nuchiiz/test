@@ -14,7 +14,7 @@ st.markdown("""
     /* ส่วนตั้งค่าตามแผน (Planned) - ปรับสีพื้นหลังให้ข้อความเด่น */
     .stExpander {
         border: 2px solid #000000 !important;
-        background-color: #0288d1 !important;
+        background-color: #eceff1 !important;
         border-radius: 10px !important;
     }
     
@@ -30,11 +30,11 @@ st.markdown("""
     [data-testid="stMetricLabel"] { font-size: 18px !important; font-weight: bold !important; color: #333 !important; }
     
     /* สีพื้นหลัง Metric แยกตามวัสดุ */
-    div[data-testid="stMetric"]:nth-child(1) { background-color: #e1f5fe; border: 2px solid #333; } 
-    div[data-testid="stMetric"]:nth-child(2) { background-color: #e1f5fe; border: 2px solid #333; } 
-    div[data-testid="stMetric"]:nth-child(3) { background-color: #e1f5fe; border: 2px solid #F59E0B; } 
-    div[data-testid="stMetric"]:nth-child(4) { background-color: #e1f5fe; border: 2px solid #10B981; } 
-    div[data-testid="stMetric"]:nth-child(5) { background-color: #e1f5fe; border: 2px solid #3B82F6; }
+    div[data-testid="stMetric"]:nth-child(1) { background-color: #eceff1; border: 2px solid #333; } 
+    div[data-testid="stMetric"]:nth-child(2) { background-color: #eceff1; border: 2px solid #333; } 
+    div[data-testid="stMetric"]:nth-child(3) { background-color: #eceff1; border: 2px solid #F59E0B; } 
+    div[data-testid="stMetric"]:nth-child(4) { background-color: #eceff1; border: 2px solid #10B981; } 
+    div[data-testid="stMetric"]:nth-child(5) { background-color: #eceff1; border: 2px solid #3B82F6; }
 
     /* ปรับช่อง Input ให้ใหญ่ชัดเจน */
     .stTextInput input, .stNumberInput input {
@@ -73,8 +73,8 @@ try:
             
         # ส่วนตั้งค่าแผนงาน
         st.subheader("📊 1. ตั้งค่าปริมาณตามแผน (Planned)")
-        with st.expander("📝 คลิกเพื่อกรอกปริมาณวัสดุที่ได้รับอนุมัติ", expanded=True):
-            st.markdown("**กรุณาระบุปริมาณวัสดุตามงบประมาณเพื่อเปรียบเทียบ**")
+        with st.expander("📝 ปริมาณวัสดุที่ได้รับอนุมัติตามแผน", expanded=True):
+            st.markdown("**กรุณาระบุปริมาณวัสดุตามแผน**")
             col_plan = st.columns(5)
             p_names = ["หินใหญ่", "หินย่อย", "ทรายหยาบ", "ปูนซีเมนต์", "หินคลุก"]
             planned_values = {}
@@ -84,7 +84,7 @@ try:
         st.divider()
 
         # ส่วนเพิ่มรายการงาน
-        st.subheader("➕ 2. รายการงาน")
+        st.subheader("➕ 2. รายการงานคอนกรีตและหิน")
         col_in1, col_in2, col_in3 = st.columns([2, 1, 1])
         work_list = df[0].dropna().unique().tolist()
         selected_work = col_in1.selectbox("เลือกงานก่อสร้าง:", work_list)
