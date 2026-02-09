@@ -14,9 +14,7 @@ st.markdown("""
         font-family: 'Sarabun', sans-serif; 
         background-color: #ffffff !important; 
     }
-    
     [data-testid="column"] { display: flex; align-items: flex-end; }
-
     .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
         font-size: 18px !important;
         font-weight: bold !important;
@@ -24,19 +22,15 @@ st.markdown("""
         border: 2px solid #000000 !important; 
         border-radius: 8px !important;
     }
-
-    /* จัดตารางให้กึ่งกลาง */
     .stTable { width: 100%; border: 1px solid #000; }
     .stTable th { text-align: center !important; background-color: #f2f2f2 !important; }
     .stTable td { text-align: center !important; vertical-align: middle !important; }
-
     div.stButton > button {
         width: 100%; height: 3.0rem; border-radius: 8px !important;
         background-color: #007bff; color: white; border: 1px solid #000;
     }
     .stExpander { border: 2px solid #000000 !important; background-color: #ffffff !important; border-radius: 10px !important; }
-    [data-testid="stMetricValue"] { text-align: center; font-weight: bold; }
-    [data-testid="stMetricLabel"] { text-align: center; }
+    .calc-box { background-color: #f9f9f9; border-left: 5px solid #007bff; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -60,7 +54,7 @@ def to_excel(df_detailed, df_summary):
 if 'calc_history' not in st.session_state:
     st.session_state.calc_history = []
 
-st.markdown("<h1>🏗️ ระบบคำนวณวัสดุสะสม (V.2)</h1>", unsafe_allow_html=True)
+st.markdown("<h1>🏗️ ระบบคำนวณวัสดุพร้อมรายละเอียดเกณฑ์</h1>", unsafe_allow_html=True)
 
 try:
     df = load_data()
@@ -71,14 +65,13 @@ try:
         
         p_names = ["หินใหญ่(ลบ.ม.)", "หินย่อย(ลบ.ม.)", "ทรายหยาบ(ลบ.ม.)", "ปูนซีเมนต์(ถุง)", "หินคลุก(ลบ.ม.)", "เหล็กเส้น(ตัน)", "ลวดผูกเหล็ก(กก.)"]
 
-        # 1. แผนงาน (แก้ไขจุดที่ทำให้เกิด Error)
+        # 1. แผนงาน
         st.markdown("### 📊 1. ตั้งค่าปริมาณตามแผน (Planned)")
         with st.expander("📝 ระบุปริมาณวัสดุตามแผนงาน", expanded=True):
             col_plan = st.columns(4) 
             planned_values = {}
             for i, name in enumerate(p_names):
                 val = col_plan[i % 4].number_input(f"{name}", min_value=0.0, format="%.2f", key=f"p_{i}")
-                # ตรวจสอบว่าเป็น None หรือไม่ก่อน round
                 planned_values[name] = round(val, 2) if val is not None else 0.0
 
         st.divider()
@@ -96,19 +89,50 @@ try:
                 selected_row = df[df[0] == selected_work].iloc[0]
                 m_idx_map = {p_names[0]: 2, p_names[1]: 4, p_names[2]: 6, p_names[3]: 8, p_names[4]: 10, p_names[5]: 12, p_names[6]: 14}
                 temp_details = {}
+                unit_ratios = {} # เก็บค่าเกณฑ์ต่อหน่วย
                 for m_name, idx in m_idx_map.items():
                     if idx < len(selected_row):
                         try:
                             val_str = str(selected_row[idx]).replace(',', '').strip()
                             if val_str and val_str != "nan":
-                                temp_details[m_name] = round(float(val_str) * q_val, 2)
+                                ratio = float(val_str)
+                                unit_ratios[m_name] = ratio
+                                temp_details[m_name] = round(ratio * q_val, 2)
                         except: continue
-                st.session_state.calc_history.append({"ประเภทงาน": selected_work, "ปริมาณงาน": round(q_val, 2), "รายละเอียด": temp_details})
+                st.session_state.calc_history.append({
+                    "ประเภทงาน": selected_work, 
+                    "ปริมาณงาน": round(q_val, 2), 
+                    "เกณฑ์ต่อหน่วย": unit_ratios,
+                    "รายละเอียด": temp_details
+                })
                 st.rerun()
 
-        # 3. สรุปผล
+        # 3. สรุปผลและรายละเอียด
         if st.session_state.calc_history:
-            st.markdown("### 📊 3. สรุปยอดรวมวัสดุสะสม")
+            st.markdown("### 📋 3. รายละเอียดการคำนวณแต่ละรายการ")
+            for i, item in enumerate(st.session_state.calc_history):
+                with st.expander(f"🔹 {item['ประเภทงาน']} (จำนวน {item['ปริมาณงาน']:,} หน่วย)", expanded=False):
+                    st.markdown("**เกณฑ์การคำนวณและผลลัพธ์:**")
+                    # สร้างตารางรายละเอียดภายใน Expander
+                    calc_data = []
+                    for m_n in p_names:
+                        ratio = item['เกณฑ์ต่อหน่วย'].get(m_n, 0.0)
+                        total = item['รายละเอียด'].get(m_n, 0.0)
+                        if ratio > 0: # แสดงเฉพาะวัสดุที่มีในงานนั้นๆ
+                            calc_data.append({
+                                "วัสดุ": m_n,
+                                "เกณฑ์ต่อหน่วย (A)": f"{ratio:,.3f}",
+                                "คูณจำนวนงาน (B)": f"{item['ปริมาณงาน']:,}",
+                                "รวมวัสดุที่ใช้ (A x B)": f"{total:,.2f}"
+                            })
+                    st.table(pd.DataFrame(calc_data))
+                    
+                    if st.button(f"🗑️ ลบรายการนี้", key=f"del_{i}"):
+                        st.session_state.calc_history.pop(i)
+                        st.rerun()
+
+            st.divider()
+            st.markdown("### 📊 4. สรุปยอดรวมวัสดุสะสม")
             totals = {k: round(sum(item['รายละเอียด'].get(k, 0.0) for item in st.session_state.calc_history), 2) for k in p_names}
             
             # ตารางสรุปกึ่งกลาง
@@ -126,15 +150,8 @@ try:
             df_detailed_ex = pd.DataFrame([{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history])
             excel_data = to_excel(df_detailed_ex, df_comp)
             
-            st.download_button(
-                label="📥 ดาวน์โหลดไฟล์ Excel (.xlsx)",
-                data=excel_data,
-                file_name=f'Summary_Report_{datetime.now().strftime("%Y%m%d")}.xlsx',
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            )
-            if st.button("🚫 ล้างข้อมูลทั้งหมด", use_container_width=True):
-                st.session_state.calc_history = []; st.rerun()
+            st.download_button(label="📥 ดาวน์โหลดไฟล์ Excel (.xlsx)", data=excel_data, file_name=f'Summary_Report_{datetime.now().strftime("%Y%m%d")}.xlsx', use_container_width=True)
+            
     else:
         st.error("❌ ไม่พบไฟล์ข้อมูล CSV")
 except Exception as e:
