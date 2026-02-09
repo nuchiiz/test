@@ -77,7 +77,7 @@ st.markdown("""
         <a href="https://drive.google.com/file/d/1ibHbb81wjwqaDa3ab-VsDDwR-qvUx5FM/view" target="_blank" style="text-decoration: none; color: #007bff; font-weight: bold;">
             หลักเกณฑ์การคำนวณราคากลางงานก่อสร้างชลประทาน (ตุลาคม 2560)
         </a>
-        <br><small><i>*อ้างอิงตามบัญชีท้ายหลักเกณฑ์ฯ หน้า 215 "ตารางคำนวณอัตราราคางานคอนกรีตและหิน"</i></small>
+        <br><small><i>*อ้างอิงตามบัญชีท้ายหลักเกณฑ์ฯ หน้า 217 "ตารางคำนวณอัตราราคางานคอนกรีตและหิน งานก่อสร้างชลประทาน"</i></small>
     </div>
 """, unsafe_allow_html=True)
 
