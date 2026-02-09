@@ -143,7 +143,7 @@ try:
                 "แผนงาน (Planned)": planned_values[name],
                 "คำนวณจริง (Actual)": totals[name],
                 "ส่วนต่าง (+เหลือ/-เกิน)": planned_values[name] - totals[name],
-                "สถานะ": "✅ ปกติ" if (planned_values[name] - totals[name]) >= 0 else "⚠️ เกินแผน"
+                "สถานะ": "✅ น้อยกว่าหรือเท่ากลับแผน" if (planned_values[name] - totals[name]) >= 0 else "⚠️ เกินกว่าแผน"
             } for name in p_names])
             st.table(df_comp)
 
