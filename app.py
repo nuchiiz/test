@@ -53,7 +53,7 @@ def to_excel(df_detailed, df_summary):
 if 'calc_history' not in st.session_state:
     st.session_state.calc_history = []
 
-st.markdown("<h1>🏗️ ระบบคำนวณวัสดุพร้อมรายละเอียดเกณฑ์</h1>", unsafe_allow_html=True)
+st.markdown("<h1>🏗️ ตารางคำนวณอัตราราคางานคอนกรีตและหิน</h1>", unsafe_allow_html=True)
 
 try:
     df = load_data()
@@ -142,7 +142,7 @@ try:
                 "แผนงาน (Planned)": f"{planned_values[name]:,.2f}",
                 "คำนวณจริง (Actual)": f"{totals[name]:,.2f}",
                 "ส่วนต่าง (+เหลือ/-เกิน)": f"{(planned_values[name] - totals[name]):,.2f}",
-                "สถานะ": "✅ ปกติ" if (planned_values[name] - totals[name]) >= 0 else "⚠️ เกินแผน"
+                "สถานะ": "✅ น้อยกว่าหรือเท่ากับแผน" if (planned_values[name] - totals[name]) >= 0 else "⚠️ เกินแผน"
             } for name in p_names])
             
             st.table(df_comp)
