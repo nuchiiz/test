@@ -27,7 +27,7 @@ st.markdown("""
     div.stButton > button, div.stDownloadButton > button {
         height: 45px !important;
         border-radius: 8px !important;
-        background-color: #007bff; 
+        background-color: #33691e; 
         color: white; 
         border: 1px solid #000; 
         font-weight: bold;
