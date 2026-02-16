@@ -6,48 +6,52 @@ import io
 # 1. ตั้งค่าหน้าจอ
 st.set_page_config(page_title="ระบบควบคุมวัสดุ Pro V.2", layout="wide")
 
-# CSS: ปรับแต่งให้ปุ่มในส่วนเพิ่มรายการมีขนาดเท่ากับ Input และจัดปุ่มล่างให้อยู่กึ่งกลาง
+# CSS: ปรับแต่ง UI ทั้งหมด
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
     
-    /* ปรับแต่งช่อง Input */
-    .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
+    /* ปรับความสูงมาตรฐานให้ Input และ Selectbox */
+    div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div,
+    div[data-testid="stNumberInput"] input {
+        height: 45px !important;
         font-size: 18px !important;
         font-weight: bold !important;
         background-color: #f2f2f2 !important; 
         border: 2px solid #000000 !important; 
         border-radius: 8px !important;
-        height: 3.2rem !important; /* บังคับความสูงของ Input */
     }
 
     /* สไตล์ปุ่มทั่วไป */
     div.stButton > button, div.stDownloadButton > button {
+        height: 45px !important;
         border-radius: 8px !important;
         background-color: #007bff; 
         color: white; 
         border: 1px solid #000; 
         font-weight: bold;
-        height: 3.2rem !important; /* บังคับความสูงปุ่มให้เท่ากับ Input */
         transition: 0.3s;
     }
-    
-    /* จัดการปุ่ม "เพิ่มรายการ" ให้ขยายเต็มคอลัมน์เพื่อให้ขนาดเท่าช่องข้างๆ */
+
+    /* จัดระเบียบปุ่ม "เพิ่มรายการ" (ส่วนที่ 2) */
     .add-btn-container div.stButton > button {
+        margin-top: 28px !important; /* ดันลงมาให้ตรงกับช่องที่มี Label */
         width: 100% !important;
     }
 
-    /* จัดการปุ่มสรุปตอนท้ายให้เป็นขนาด Auto และอยู่กึ่งกลาง */
-    .center-btn-container [data-testid="stHorizontalBlock"] {
-        justify-content: center !important;
-        gap: 15px !important;
+    /* จัดระเบียบปุ่มตอนท้าย (ส่วนที่ 4) ให้กึ่งกลางและหดตามตัวอักษร */
+    .center-btn-group {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
     }
-    .center-btn-container div.stButton > button, 
-    .center-btn-container div.stDownloadButton > button {
+    .center-btn-group div.stButton > button, 
+    .center-btn-group div.stDownloadButton > button {
         width: auto !important;
         min-width: 200px !important;
-        padding: 0 25px !important;
+        padding: 0 30px !important;
     }
 
     /* ปุ่มสีแดง */
@@ -56,11 +60,13 @@ st.markdown("""
         color: white !important;
     }
 
-    /* ปรับให้ Column จัดวางเนื้อหาชิดด้านล่าง (เพื่อให้ปุ่มตรงกับช่อง Input) */
-    [data-testid="column"] {
-        display: flex;
-        align-items: flex-end;
+    div.stButton > button:hover {
+        border-color: #007bff;
+        color: #007bff;
+        background-color: white;
     }
+    
+    .stTable { width: 100%; border: 1px solid #000; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -84,17 +90,7 @@ def to_excel(df_detailed, df_summary):
 if 'calc_history' not in st.session_state:
     st.session_state.calc_history = []
 
-st.markdown("<h1 style='text-align: center;'>🏗️ ตารางคำนวณอัตราราคางานคอนกรีตและหิน</h1>", unsafe_allow_html=True)
-
-st.markdown("""
-    <div class="ref-box">
-        📖 <b>เอกสารอ้างอิง:</b> 
-        <a href="https://drive.google.com/file/d/1ibHbb81wjwqaDa3ab-VsDDwR-qvUx5FM/view" target="_blank" style="text-decoration: none; color: #007bff; font-weight: bold;">
-            หลักเกณฑ์การคำนวณราคากลางงานก่อสร้างชลประทาน (ตุลาคม 2560)
-        </a>
-        <br><small><i>*อ้างอิงตามบัญชีท้ายหลักเกณฑ์ฯ หน้า 217 "ตารางคำนวณอัตราราคางานคอนกรีตและหิน งานก่อสร้างชลประทาน"</i></small>
-    </div>
-""", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🏗️ ระบบคำนวณวัสดุและควบคุมแผน</h1>", unsafe_allow_html=True)
 
 try:
     df = load_data()
@@ -106,7 +102,7 @@ try:
         p_names = ["หินใหญ่(ลบ.ม.)", "หินย่อย(ลบ.ม.)", "ทรายหยาบ(ลบ.ม.)", "ปูนซีเมนต์(ถุง)", "หินคลุก(ลบ.ม.)", "เหล็กเส้นเสริมคอนกรีต(ตัน)", "ลวดผูกเหล็ก(กก.)"]
 
         st.markdown("### 📊 1. ปริมาณตามแผนจัดซื้อจัดจ้าง")
-        with st.expander("📝 ระบุปริมาณวัสดุที่ได้รับอนุมัติ", expanded=True):
+        with st.expander("📝 ระบุปริมาณวัสดุตามแผน", expanded=True):
             col_plan = st.columns(4) 
             planned_values = {}
             for i, name in enumerate(p_names):
@@ -115,44 +111,45 @@ try:
 
         st.divider()
 
-        # --- ส่วนที่ 2: รายการงานก่อสร้าง (ใส่ container เพื่อคุมสไตล์ปุ่ม) ---
+        # --- ส่วนที่ 2: เพิ่มรายการ (ปรับขนาดให้เท่ากันและระนาบเดียวกัน) ---
         st.markdown("### ➕ 2. รายการงานก่อสร้าง")
+        work_list = df[0].dropna().unique().tolist()
+        
+        # ใช้ container ครอบเพื่อให้ CSS ทำงานเฉพาะจุด
         st.markdown('<div class="add-btn-container">', unsafe_allow_html=True)
         col_in1, col_in2, col_in3 = st.columns([2.5, 1, 1]) 
-        work_list = df[0].dropna().unique().tolist()
         
         with col_in1:
             selected_work = st.selectbox("เลือกประเภทงาน:", work_list)
         with col_in2:
-            q_val = st.number_input("ปริมาณงานจริง:", min_value=0.0, value=0.0, format="%.2f", key="work_qty")
+            q_val_input = st.number_input("ปริมาณงานจริง:", min_value=0.0, value=0.0, format="%.2f", key="work_qty")
+            q_val = q_val_input if q_val_input is not None else 0.0
         with col_in3:
-            # ใช้ use_container_width=True เพื่อให้ปุ่มมีขนาดเท่ากับช่อง Input ข้างๆ
             add_btn = st.button("➕ เพิ่มรายการ", use_container_width=True)
-            
-        if add_btn:
-            if q_val > 0:
-                selected_row = df[df[0] == selected_work].iloc[0]
-                m_idx_map = {p_names[0]: 2, p_names[1]: 4, p_names[2]: 6, p_names[3]: 8, p_names[4]: 10, p_names[5]: 12, p_names[6]: 14}
-                temp_details = {}
-                unit_ratios = {}
-                for m_name, idx in m_idx_map.items():
-                    try:
-                        val_str = str(selected_row[idx]).replace(',', '').strip()
-                        if val_str and val_str not in ["nan", "-"]:
-                            ratio = float(val_str)
-                            unit_ratios[m_name] = ratio
-                            temp_details[m_name] = ratio * q_val
-                    except: continue
-                st.session_state.calc_history.append({"ประเภทงาน": selected_work, "ปริมาณงาน": q_val, "เกณฑ์ต่อหน่วย": unit_ratios, "รายละเอียด": temp_details})
-                st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
+
+        if add_btn and q_val > 0:
+            selected_row = df[df[0] == selected_work].iloc[0]
+            m_idx_map = {p_names[0]: 2, p_names[1]: 4, p_names[2]: 6, p_names[3]: 8, p_names[4]: 10, p_names[5]: 12, p_names[6]: 14}
+            temp_details = {}
+            unit_ratios = {}
+            for m_name, idx in m_idx_map.items():
+                try:
+                    val_str = str(selected_row[idx]).replace(',', '').strip()
+                    if val_str and val_str not in ["nan", "-"]:
+                        ratio = float(val_str)
+                        unit_ratios[m_name] = ratio
+                        temp_details[m_name] = round(ratio * q_val, 2)
+                except: continue
+            st.session_state.calc_history.append({"ประเภทงาน": selected_work, "ปริมาณงาน": q_val, "เกณฑ์ต่อหน่วย": unit_ratios, "รายละเอียด": temp_details})
+            st.rerun()
 
         if st.session_state.calc_history:
             st.divider()
             st.markdown("### 📋 3. รายละเอียดการคำนวณ")
             for i, item in enumerate(st.session_state.calc_history):
-                with st.expander(f"🔹 {item['ประเภทงาน']} (จำนวน {item['ปริมาณงาน']:,} หน่วย)"):
-                    calc_table = [{"รายการวัสดุ": m, "รวมวัสดุที่ต้องใช้": f"{item['รายละเอียด'][m]:,.2f}"} for m in item['เกณฑ์ต่อหน่วย']]
+                with st.expander(f"🔹 {item['ประเภทงาน']} ({item['ปริมาณงาน']:,} หน่วย)"):
+                    calc_table = [{"วัสดุ": m, "รวมที่ต้องใช้": f"{item['รายละเอียด'][m]:,.2f}"} for m in item['เกณฑ์ต่อหน่วย']]
                     st.table(pd.DataFrame(calc_table))
                     if st.button(f"🗑️ ลบรายการ", key=f"del_{i}"):
                         st.session_state.calc_history.pop(i)
@@ -164,28 +161,28 @@ try:
             
             df_comp_data = []
             for name in p_names:
-                plan_val = planned_values.get(name, 0.0)
-                actual_val = totals.get(name, 0.0)
-                diff = plan_val - actual_val
+                p_v = planned_values.get(name, 0.0)
+                a_v = totals.get(name, 0.0)
+                diff = p_v - a_v
                 df_comp_data.append({
                     "รายการวัสดุ": name,
-                    "แผนงาน": f"{plan_val:,.2f}",
-                    "ใช้จริง": f"{actual_val:,.2f}",
+                    "แผนงาน": f"{p_v:,.2f}",
+                    "ใช้จริง": f"{a_v:,.2f}",
                     "ส่วนต่าง": f"{diff:,.2f}",
-                    "สถานะ": "✅ น้อยกว่าหรือเท่ากับแผน" if diff >= 0 else "⚠️ เกินแผน"
+                    "สถานะ": "✅ ปกติ" if diff >= 0 else "⚠️ เกินแผน"
                 })
             st.table(pd.DataFrame(df_comp_data))
 
-            # --- ส่วนท้าย: ปุ่มดาวน์โหลดและล้างข้อมูล (กึ่งกลางและติดกัน) ---
-            st.markdown('<div class="center-btn-container">', unsafe_allow_html=True)
-            c_left, c_btn1, c_btn2, c_right = st.columns([1, 1, 1, 1])
+            # --- ส่วนที่ 4: ปุ่มดาวน์โหลดและล้างข้อมูล (กึ่งกลางและติดกัน) ---
+            st.markdown('<div class="center-btn-group">', unsafe_allow_html=True)
+            col_b1, col_b2 = st.columns([1, 1]) # ใช้ column เพื่อจัดโครงสร้างภายใน flex
             
-            with c_btn1:
+            with col_b1:
                 df_detailed_ex = pd.DataFrame([{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history])
                 excel_data = to_excel(df_detailed_ex, pd.DataFrame(df_comp_data))
                 st.download_button(label="📥 ดาวน์โหลดไฟล์ Excel", data=excel_data, file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx')
             
-            with c_btn2:
+            with col_b2:
                 if st.button("🚫 ล้างข้อมูลทั้งหมด"):
                     st.session_state.calc_history = []
                     st.rerun()
