@@ -6,7 +6,7 @@ import io
 # 1. ตั้งค่าหน้าจอ
 st.set_page_config(page_title="ระบบควบคุมวัสดุ Pro V.2", layout="wide")
 
-# CSS: ปรับให้ปุ่มมีขนาดพอดีและจัดวางชิดกัน
+# CSS: ปรับให้ปุ่มขนาดพอดี และจัดวางให้อยู่กึ่งกลางหน้าจอ
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
@@ -21,13 +21,13 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* ปรับแต่งปุ่มให้ขนาดกะทัดรัด */
+    /* ปรับแต่งปุ่มให้ขนาดพอดีตัวอักษร */
     div.stButton > button, div.stDownloadButton > button {
         width: auto !important;
-        min-width: 160px !important;
-        padding-left: 20px !important;
-        padding-right: 20px !important;
-        height: 3.0rem; 
+        min-width: 180px !important;
+        padding-left: 25px !important;
+        padding-right: 25px !important;
+        height: 3.2rem; 
         border-radius: 8px !important;
         background-color: #007bff; 
         color: white; 
@@ -48,13 +48,14 @@ st.markdown("""
         color: white !important;
     }
 
-    /* บังคับให้คอลัมน์ปุ่มอยู่ชิดกัน */
+    /* บังคับให้ปุ่มในคอลัมน์ชิดกันและอยู่กึ่งกลาง */
+    [data-testid="stHorizontalBlock"] {
+        justify-content: center !important; /* จัดทุกอย่างในแถวให้อยู่กึ่งกลาง */
+        gap: 15px !important;              /* ระยะห่างระหว่างปุ่ม */
+    }
     [data-testid="column"] {
         width: fit-content !important;
         flex: none !important;
-    }
-    [data-testid="stHorizontalBlock"] {
-        gap: 10px !important; /* ระยะห่างระหว่างปุ่ม */
     }
     </style>
 """, unsafe_allow_html=True)
@@ -79,7 +80,7 @@ def to_excel(df_detailed, df_summary):
 if 'calc_history' not in st.session_state:
     st.session_state.calc_history = []
 
-st.markdown("<h1>🏗️ ตารางคำนวณอัตราราคางานคอนกรีตและหิน</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🏗️ ตารางคำนวณอัตราราคางานคอนกรีตและหิน</h1>", unsafe_allow_html=True)
 
 st.markdown("""
     <div class="ref-box">
@@ -159,20 +160,21 @@ try:
                     "แผนงาน": f"{plan_val:,.2f}",
                     "ใช้จริง": f"{actual_val:,.2f}",
                     "ส่วนต่าง": f"{diff:,.2f}",
-                    "สถานะ": "✅ น้อยกว่าหรือเท่ากับแผน" if diff >= 0 else "⚠️ เกินแผน"
+                    "สถานะ": "✅น้อยกว่าหรือเท่ากับแผน" if diff >= 0 else "⚠️ เกินแผน"
                 })
             st.table(pd.DataFrame(df_comp_data))
 
-            # --- จุดที่ปรับปรุง: วางปุ่มให้อยู่ติดกันและระดับเดียวกัน ---
-            # ใช้ columns ขนาดเล็กเพื่อให้ปุ่มวางชิดกันทางซ้าย
-            btn_col1, btn_col2, btn_col_spacer = st.columns([0.2, 0.2, 0.6])
+            # --- จุดที่ปรับปรุง: วางปุ่มให้อยู่กึ่งกลางหน้าจอและติดกัน ---
+            # สร้าง columns แบบสมดุล [ซ้าย, ปุ่ม1, ปุ่ม2, ขวา]
+            st.write("") # เว้นระยะบรรทัดเล็กน้อย
+            c_left, c_btn1, c_btn2, c_right = st.columns([1, 1, 1, 1])
             
-            with btn_col1:
+            with c_btn1:
                 df_detailed_ex = pd.DataFrame([{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history])
                 excel_data = to_excel(df_detailed_ex, pd.DataFrame(df_comp_data))
                 st.download_button(label="📥 ดาวน์โหลดไฟล์ Excel", data=excel_data, file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx', use_container_width=False)
             
-            with btn_col2:
+            with c_btn2:
                 if st.button("🚫 ล้างข้อมูลทั้งหมด", use_container_width=False):
                     st.session_state.calc_history = []
                     st.rerun()
