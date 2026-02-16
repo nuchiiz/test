@@ -102,7 +102,6 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-
 try:
     df = load_data()
     if df is not None:
