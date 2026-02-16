@@ -6,13 +6,13 @@ import io
 # 1. ตั้งค่าหน้าจอ
 st.set_page_config(page_title="ระบบควบคุมวัสดุ Pro V.2", layout="wide")
 
-# CSS: ปรับแก้ให้ปุ่มมีขนาด auto (หดตามตัวอักษร) และดูมืออาชีพขึ้น
+# CSS: ปรับให้ปุ่มมีขนาดพอดีและจัดวางชิดกัน
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
     
-    /* ปรับแต่งช่อง Input */
+    /* ช่อง Input */
     .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
         font-size: 18px !important;
         font-weight: bold !important;
@@ -21,12 +21,12 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* ปรับแต่งปุ่มให้เป็นขนาด Auto (ไม่เต็มความกว้างคอลัมน์) */
+    /* ปรับแต่งปุ่มให้ขนาดกะทัดรัด */
     div.stButton > button, div.stDownloadButton > button {
-        width: auto !important;          /* ให้ขนาดหดตามข้อความ */
-        min-width: 150px !important;     /* กำหนดขนาดขั้นต่ำเพื่อให้ดูไม่เล็กเกินไป */
-        padding-left: 30px !important;   /* เพิ่มพื้นที่ว่างซ้าย-ขวาภายในปุ่ม */
-        padding-right: 30px !important;
+        width: auto !important;
+        min-width: 160px !important;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
         height: 3.0rem; 
         border-radius: 8px !important;
         background-color: #007bff; 
@@ -34,11 +34,8 @@ st.markdown("""
         border: 1px solid #000; 
         font-weight: bold;
         transition: 0.3s;
-        display: block;
-        margin: 0 auto;                  /* จัดปุ่มให้อยู่กึ่งกลางในบางกรณี */
     }
     
-    /* เอฟเฟกต์ Hover */
     div.stButton > button:hover, div.stDownloadButton > button:hover {
         border-color: #007bff;
         color: #007bff;
@@ -51,12 +48,14 @@ st.markdown("""
         color: white !important;
     }
 
-    .ref-box {
-        background-color: #e9ecef; padding: 15px; border-radius: 8px; 
-        border-left: 6px solid #007bff; margin-bottom: 25px;
+    /* บังคับให้คอลัมน์ปุ่มอยู่ชิดกัน */
+    [data-testid="column"] {
+        width: fit-content !important;
+        flex: none !important;
     }
-    
-    .stTable { width: 100%; border: 1px solid #000; }
+    [data-testid="stHorizontalBlock"] {
+        gap: 10px !important; /* ระยะห่างระหว่างปุ่ม */
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -112,14 +111,12 @@ try:
         st.divider()
 
         st.markdown("### ➕ 2. รายการงานก่อสร้าง")
-        # ปรับสัดส่วนคอลัมน์ เพื่อให้ปุ่มดูเหมาะสม
         col_in1, col_in2, col_in3 = st.columns([2.5, 1, 1]) 
         work_list = df[0].dropna().unique().tolist()
         selected_work = col_in1.selectbox("เลือกประเภทงาน:", work_list)
-        q_val_input = col_in2.number_input("ปริมาณงานที่ทำจริง:", min_value=0.0, value=0.0, format="%.2f", key="work_qty")
+        q_val_input = col_in2.number_input("ปริมาณงานจริง:", min_value=0.0, value=0.0, format="%.2f", key="work_qty")
         q_val = q_val_input if q_val_input is not None else 0.0
         
-        # ปิด use_container_width เพื่อให้ปุ่มหดตาม CSS width: auto
         if col_in3.button("➕ เพิ่มรายการ", use_container_width=False):
             if q_val > 0:
                 selected_row = df[df[0] == selected_work].iloc[0]
@@ -138,10 +135,11 @@ try:
                 st.rerun()
 
         if st.session_state.calc_history:
+            st.divider()
             st.markdown("### 📋 3. รายละเอียดการคำนวณ")
             for i, item in enumerate(st.session_state.calc_history):
                 with st.expander(f"🔹 {item['ประเภทงาน']} (จำนวน {item['ปริมาณงาน']:,} หน่วย)"):
-                    calc_table = [{"รายการวัสดุ": m, "เกณฑ์ต่อหน่วย (A)": f"{item['เกณฑ์ต่อหน่วย'][m]:,.3f}", "ปริมาณงานจริง (B)": f"{item['ปริมาณงาน']:,.2f}", "รวมวัสดุที่ต้องใช้": f"{item['รายละเอียด'][m]:,.2f}"} for m in item['เกณฑ์ต่อหน่วย']]
+                    calc_table = [{"รายการวัสดุ": m, "รวมวัสดุที่ต้องใช้": f"{item['รายละเอียด'][m]:,.2f}"} for m in item['เกณฑ์ต่อหน่วย']]
                     st.table(pd.DataFrame(calc_table))
                     if st.button(f"🗑️ ลบรายการ", key=f"del_{i}", use_container_width=False):
                         st.session_state.calc_history.pop(i)
@@ -158,26 +156,28 @@ try:
                 diff = plan_val - actual_val
                 df_comp_data.append({
                     "รายการวัสดุ": name,
-                    "แผนงาน (Planned)": f"{plan_val:,.2f}",
-                    "คำนวณจริง (Actual)": f"{actual_val:,.2f}",
-                    "ส่วนต่าง (+เหลือ/-เกิน)": f"{diff:,.2f}",
-                    "สถานะ": "✅ น้อยกว่าหรือเท่ากับแผน" if diff >= 0 else "⚠️ เกินกว่าแผน"
+                    "แผนงาน": f"{plan_val:,.2f}",
+                    "ใช้จริง": f"{actual_val:,.2f}",
+                    "ส่วนต่าง": f"{diff:,.2f}",
+                    "สถานะ": "✅ น้อยกว่าหรือเท่ากับแผน" if diff >= 0 else "⚠️ เกินแผน"
                 })
-            
             st.table(pd.DataFrame(df_comp_data))
 
-            # แถวปุ่มด้านล่าง - ปรับให้หดตัวและจัดวางแบบกึ่งกลางคอลัมน์
-            col_dl1, col_dl2 = st.columns(2)
+            # --- จุดที่ปรับปรุง: วางปุ่มให้อยู่ติดกันและระดับเดียวกัน ---
+            # ใช้ columns ขนาดเล็กเพื่อให้ปุ่มวางชิดกันทางซ้าย
+            btn_col1, btn_col2, btn_col_spacer = st.columns([0.2, 0.2, 0.6])
             
-            with col_dl1:
+            with btn_col1:
                 df_detailed_ex = pd.DataFrame([{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history])
                 excel_data = to_excel(df_detailed_ex, pd.DataFrame(df_comp_data))
                 st.download_button(label="📥 ดาวน์โหลดไฟล์ Excel", data=excel_data, file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx', use_container_width=False)
             
-            with col_dl2:
+            with btn_col2:
                 if st.button("🚫 ล้างข้อมูลทั้งหมด", use_container_width=False):
                     st.session_state.calc_history = []
                     st.rerun()
+            # -------------------------------------------------------
+
     else:
         st.error("❌ ไม่พบไฟล์ CSV")
 except Exception as e:
