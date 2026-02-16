@@ -6,15 +6,12 @@ import io
 # 1. ตั้งค่าหน้าจอ
 st.set_page_config(page_title="ระบบควบคุมวัสดุ Pro V.2", layout="wide")
 
-# CSS: ตกแต่ง UI และปรับขนาดปุ่มให้เท่ากัน
+# CSS: ตกแต่ง UI และปรับขนาดปุ่ม
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
-    html, body, [class*="css"] { 
-        font-family: 'Sarabun', sans-serif; 
-    }
+    html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
     
-    /* ปรับแต่งช่อง Input ให้ดูชัดเจน */
     .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
         font-size: 18px !important;
         font-weight: bold !important;
@@ -23,41 +20,19 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* ปรับแต่งปุ่มทุกปุ่มให้มีความสูงและลักษณะขอบเท่ากัน */
     div.stButton > button {
-        width: 100%; 
-        height: 3.0rem; 
-        border-radius: 8px !important;
-        background-color: #007bff; 
-        color: white; 
-        border: 1px solid #000; 
-        font-weight: bold;
-        transition: 0.2s;
+        width: 100%; height: 3.0rem; border-radius: 8px !important;
+        background-color: #007bff; color: white; border: 1px solid #000; font-weight: bold;
     }
     
-    /* เอฟเฟกต์เมื่อ Hover ปุ่ม */
-    div.stButton > button:hover {
-        border-color: #007bff;
-        color: #007bff;
-        background-color: white;
-    }
-
-    /* ปรับแต่งปุ่ม 'ล้างข้อมูล' ให้เป็นสีแดง (ใช้สไตล์ secondary ของ Streamlit) */
     div.stButton > button[kind="secondary"] {
-        background-color: #dc3545;
-        color: white;
-        border: 1px solid #000;
+        background-color: #dc3545; color: white; border: 1px solid #000;
     }
 
     .ref-box {
-        background-color: #e9ecef; 
-        padding: 15px; 
-        border-radius: 8px; 
-        border-left: 6px solid #007bff; 
-        margin-bottom: 25px;
+        background-color: #e9ecef; padding: 15px; border-radius: 8px; 
+        border-left: 6px solid #007bff; margin-bottom: 25px;
     }
-    
-    .stTable { width: 100%; border: 1px solid #000; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -68,8 +43,7 @@ def load_data():
         try:
             df = pd.read_csv(file_name, skiprows=2, header=None, encoding=enc, on_bad_lines='skip', low_memory=False)
             return df
-        except:
-            continue
+        except: continue
     return None
 
 def to_excel(df_detailed, df_summary):
@@ -79,20 +53,10 @@ def to_excel(df_detailed, df_summary):
         df_detailed.to_excel(writer, sheet_name='รายการงานย่อย', index=False)
     return output.getvalue()
 
-# ตรวจสอบ Session State
 if 'calc_history' not in st.session_state:
     st.session_state.calc_history = []
 
 st.markdown("<h1>🏗️ ตารางคำนวณอัตราราคางานคอนกรีตและหิน</h1>", unsafe_allow_html=True)
-
-st.markdown("""
-    <div class="ref-box">
-        📖 <b>เอกสารอ้างอิง:</b> 
-        <a href="https://drive.google.com/file/d/1ibHbb81wjwqaDa3ab-VsDDwR-qvUx5FM/view" target="_blank" style="text-decoration: none; color: #007bff; font-weight: bold;">
-            หลักเกณฑ์การคำนวณราคากลางงานก่อสร้างชลประทาน (ตุลาคม 2560)
-        </a>
-    </div>
-""", unsafe_allow_html=True)
 
 try:
     df = load_data()
@@ -104,13 +68,13 @@ try:
         p_names = ["หินใหญ่(ลบ.ม.)", "หินย่อย(ลบ.ม.)", "ทรายหยาบ(ลบ.ม.)", "ปูนซีเมนต์(ถุง)", "หินคลุก(ลบ.ม.)", "เหล็กเส้นเสริมคอนกรีต(ตัน)", "ลวดผูกเหล็ก(กก.)"]
 
         st.markdown("### 📊 1. ปริมาณตามแผนจัดซื้อจัดจ้าง")
-        with st.expander("📝 ระบุปริมาณวัสดุที่ได้รับอนุมัติ (คลิกเพื่อกรอก)", expanded=True):
+        with st.expander("📝 ระบุปริมาณวัสดุที่ได้รับอนุมัติ", expanded=True):
             col_plan = st.columns(4) 
             planned_values = {}
             for i, name in enumerate(p_names):
-                # แก้ไข value=0.0 เพื่อป้องกัน Error: NoneType.format
                 val = col_plan[i % 4].number_input(f"{name}", min_value=0.0, value=0.0, format="%.2f", key=f"p_{i}")
-                planned_values[name] = val
+                # ป้องกัน Error โดยใช้ 'or 0.0' เผื่อค่าหลุดเป็น None
+                planned_values[name] = val if val is not None else 0.0
 
         st.divider()
 
@@ -118,8 +82,8 @@ try:
         col_in1, col_in2, col_in3 = st.columns([2.5, 1, 1]) 
         work_list = df[0].dropna().unique().tolist()
         selected_work = col_in1.selectbox("เลือกประเภทงาน:", work_list)
-        # แก้ไข value=0.0 เพื่อป้องกัน Error: NoneType.format
-        q_val = col_in2.number_input("ปริมาณงานที่ทำจริง:", min_value=0.0, value=0.0, format="%.2f", key="work_qty")
+        q_val_input = col_in2.number_input("ปริมาณงานที่ทำจริง:", min_value=0.0, value=0.0, format="%.2f", key="work_qty")
+        q_val = q_val_input if q_val_input is not None else 0.0
         
         if col_in3.button("➕ เพิ่มรายการ", use_container_width=True):
             if q_val > 0:
@@ -128,80 +92,57 @@ try:
                 temp_details = {}
                 unit_ratios = {}
                 for m_name, idx in m_idx_map.items():
-                    if idx < len(selected_row):
-                        try:
-                            val_str = str(selected_row[idx]).replace(',', '').strip()
-                            if val_str and val_str not in ["nan", "-"]:
-                                ratio = float(val_str)
-                                unit_ratios[m_name] = ratio
-                                temp_details[m_name] = ratio * q_val
-                        except: continue
-                st.session_state.calc_history.append({
-                    "ประเภทงาน": selected_work, 
-                    "ปริมาณงาน": q_val, 
-                    "เกณฑ์ต่อหน่วย": unit_ratios, 
-                    "รายละเอียด": temp_details
-                })
+                    try:
+                        val_str = str(selected_row[idx]).replace(',', '').strip()
+                        if val_str and val_str not in ["nan", "-"]:
+                            ratio = float(val_str)
+                            unit_ratios[m_name] = ratio
+                            temp_details[m_name] = ratio * q_val
+                    except: continue
+                st.session_state.calc_history.append({"ประเภทงาน": selected_work, "ปริมาณงาน": q_val, "เกณฑ์ต่อหน่วย": unit_ratios, "รายละเอียด": temp_details})
                 st.rerun()
 
         if st.session_state.calc_history:
-            st.markdown("### 📋 3. รายละเอียดการคำนวณแต่ละรายการ")
+            st.markdown("### 📋 3. รายละเอียดการคำนวณ")
             for i, item in enumerate(st.session_state.calc_history):
                 with st.expander(f"🔹 {item['ประเภทงาน']} (จำนวน {item['ปริมาณงาน']:,} หน่วย)"):
-                    calc_table = []
-                    for m_n in item['เกณฑ์ต่อหน่วย']:
-                        calc_table.append({
-                            "รายการวัสดุ": m_n, 
-                            "เกณฑ์ต่อหน่วย (A)": f"{item['เกณฑ์ต่อหน่วย'][m_n]:,.3f}", 
-                            "ปริมาณงานจริง (B)": f"{item['ปริมาณงาน']:,.2f}", 
-                            "รวมวัสดุที่ต้องใช้": f"{item['รายละเอียด'][m_n]:,.2f}"
-                        })
+                    calc_table = [{"รายการวัสดุ": m, "เกณฑ์ต่อหน่วย (A)": f"{item['เกณฑ์ต่อหน่วย'][m]:,.3f}", "ปริมาณงานจริง (B)": f"{item['ปริมาณงาน']:,.2f}", "รวมวัสดุที่ต้องใช้": f"{item['รายละเอียด'][m]:,.2f}"} for m in item['เกณฑ์ต่อหน่วย']]
                     st.table(pd.DataFrame(calc_table))
                     if st.button(f"🗑️ ลบรายการ", key=f"del_{i}"):
                         st.session_state.calc_history.pop(i)
                         st.rerun()
 
             st.divider()
-            st.markdown("### 📊 4. สรุปยอดรวมวัสดุสะสมเปรียบเทียบแผนงานจัดซื้อจัดจ้าง")
+            st.markdown("### 📊 4. สรุปยอดรวมวัสดุสะสม")
             totals = {k: sum(item['รายละเอียด'].get(k, 0.0) for item in st.session_state.calc_history) for k in p_names}
             
             df_comp_data = []
             for name in p_names:
-                plan_val = planned_values.get(name, 0.0)
+                # แก้ไขจุดเสี่ยง Error: ลบค่า None ด้วยการใช้ or 0.0
+                plan_val = planned_values.get(name) if planned_values.get(name) is not None else 0.0
                 actual_val = totals.get(name, 0.0)
-                diff = plan_val - actual_val
-                status = "✅ น้อยกกว่าหรือเท่ากับแผน" if diff >= 0 else "⚠️ เกินกว่าแผน"
+                diff = plan_val - actual_val  # จะไม่เกิด Error แล้วเพราะทั้งคู่เป็น float
+                
                 df_comp_data.append({
                     "รายการวัสดุ": name,
                     "แผนงาน (Planned)": f"{plan_val:,.2f}",
                     "คำนวณจริง (Actual)": f"{actual_val:,.2f}",
                     "ส่วนต่าง (+เหลือ/-เกิน)": f"{diff:,.2f}",
-                    "สถานะ": status
+                    "สถานะ": "✅ ปกติ" if diff >= 0 else "⚠️ เกินกว่าแผน"
                 })
             
-            df_comp = pd.DataFrame(df_comp_data)
-            st.table(df_comp)
+            st.table(pd.DataFrame(df_comp_data))
 
-            # โซนปุ่มดาวน์โหลดและล้างข้อมูล จัดวางให้อยู่ในแถวเดียวกันและขนาดเท่ากัน
             col_dl1, col_dl2 = st.columns(2)
-            
-            # เตรียมข้อมูลสำหรับ Excel
-            df_detailed_ex = pd.DataFrame([{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history])
-            excel_data = to_excel(df_detailed_ex, df_comp)
-            
             with col_dl1:
-                st.download_button(
-                    label="📥 ดาวน์โหลดไฟล์ Excel", 
-                    data=excel_data, 
-                    file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx', 
-                    use_container_width=True
-                )
-            
+                df_detailed_ex = pd.DataFrame([{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history])
+                excel_data = to_excel(df_detailed_ex, pd.DataFrame(df_comp_data))
+                st.download_button(label="📥 ดาวน์โหลดไฟล์ Excel", data=excel_data, file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx', use_container_width=True)
             with col_dl2:
                 if st.button("🚫 ล้างข้อมูลทั้งหมด", use_container_width=True):
                     st.session_state.calc_history = []
                     st.rerun()
     else:
-        st.error("❌ ไม่พบไฟล์ CSV กรุณาตรวจสอบว่ามีไฟล์ 'ตารางคำนวณอัตราราคางานคอนกรีตและหิน-กรมบัญชีกลาง3.csv' อยู่ในโฟลเดอร์เดียวกัน")
+        st.error("❌ ไม่พบไฟล์ CSV")
 except Exception as e:
     st.error(f"⚠️ เกิดข้อผิดพลาด: {str(e)}")
