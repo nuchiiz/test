@@ -6,56 +6,60 @@ import io
 # 1. ตั้งค่าหน้าจอ
 st.set_page_config(page_title="ระบบควบคุมวัสดุ Pro V.2", layout="wide")
 
-# CSS: ปรับให้ปุ่มขนาดพอดี และจัดวางให้อยู่กึ่งกลางหน้าจอ
+# CSS: ปรับแต่งให้ปุ่มในส่วนเพิ่มรายการมีขนาดเท่ากับ Input และจัดปุ่มล่างให้อยู่กึ่งกลาง
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
     
-    /* ช่อง Input */
+    /* ปรับแต่งช่อง Input */
     .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
         font-size: 18px !important;
         font-weight: bold !important;
         background-color: #f2f2f2 !important; 
         border: 2px solid #000000 !important; 
         border-radius: 8px !important;
+        height: 3.2rem !important; /* บังคับความสูงของ Input */
     }
 
-    /* ปรับแต่งปุ่มให้ขนาดพอดีตัวอักษร */
+    /* สไตล์ปุ่มทั่วไป */
     div.stButton > button, div.stDownloadButton > button {
-        width: auto !important;
-        min-width: 180px !important;
-        padding-left: 25px !important;
-        padding-right: 25px !important;
-        height: 3.2rem; 
         border-radius: 8px !important;
         background-color: #007bff; 
         color: white; 
         border: 1px solid #000; 
         font-weight: bold;
+        height: 3.2rem !important; /* บังคับความสูงปุ่มให้เท่ากับ Input */
         transition: 0.3s;
     }
     
-    div.stButton > button:hover, div.stDownloadButton > button:hover {
-        border-color: #007bff;
-        color: #007bff;
-        background-color: white;
+    /* จัดการปุ่ม "เพิ่มรายการ" ให้ขยายเต็มคอลัมน์เพื่อให้ขนาดเท่าช่องข้างๆ */
+    .add-btn-container div.stButton > button {
+        width: 100% !important;
     }
 
-    /* ปุ่มล้างข้อมูล (สีแดง) */
+    /* จัดการปุ่มสรุปตอนท้ายให้เป็นขนาด Auto และอยู่กึ่งกลาง */
+    .center-btn-container [data-testid="stHorizontalBlock"] {
+        justify-content: center !important;
+        gap: 15px !important;
+    }
+    .center-btn-container div.stButton > button, 
+    .center-btn-container div.stDownloadButton > button {
+        width: auto !important;
+        min-width: 200px !important;
+        padding: 0 25px !important;
+    }
+
+    /* ปุ่มสีแดง */
     div.stButton > button[kind="secondary"] {
         background-color: #dc3545 !important;
         color: white !important;
     }
 
-    /* บังคับให้ปุ่มในคอลัมน์ชิดกันและอยู่กึ่งกลาง */
-    [data-testid="stHorizontalBlock"] {
-        justify-content: center !important; /* จัดทุกอย่างในแถวให้อยู่กึ่งกลาง */
-        gap: 15px !important;              /* ระยะห่างระหว่างปุ่ม */
-    }
+    /* ปรับให้ Column จัดวางเนื้อหาชิดด้านล่าง (เพื่อให้ปุ่มตรงกับช่อง Input) */
     [data-testid="column"] {
-        width: fit-content !important;
-        flex: none !important;
+        display: flex;
+        align-items: flex-end;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -111,14 +115,21 @@ try:
 
         st.divider()
 
+        # --- ส่วนที่ 2: รายการงานก่อสร้าง (ใส่ container เพื่อคุมสไตล์ปุ่ม) ---
         st.markdown("### ➕ 2. รายการงานก่อสร้าง")
+        st.markdown('<div class="add-btn-container">', unsafe_allow_html=True)
         col_in1, col_in2, col_in3 = st.columns([2.5, 1, 1]) 
         work_list = df[0].dropna().unique().tolist()
-        selected_work = col_in1.selectbox("เลือกประเภทงาน:", work_list)
-        q_val_input = col_in2.number_input("ปริมาณงานจริง:", min_value=0.0, value=0.0, format="%.2f", key="work_qty")
-        q_val = q_val_input if q_val_input is not None else 0.0
         
-        if col_in3.button("➕ เพิ่มรายการ", use_container_width=False):
+        with col_in1:
+            selected_work = st.selectbox("เลือกประเภทงาน:", work_list)
+        with col_in2:
+            q_val = st.number_input("ปริมาณงานจริง:", min_value=0.0, value=0.0, format="%.2f", key="work_qty")
+        with col_in3:
+            # ใช้ use_container_width=True เพื่อให้ปุ่มมีขนาดเท่ากับช่อง Input ข้างๆ
+            add_btn = st.button("➕ เพิ่มรายการ", use_container_width=True)
+            
+        if add_btn:
             if q_val > 0:
                 selected_row = df[df[0] == selected_work].iloc[0]
                 m_idx_map = {p_names[0]: 2, p_names[1]: 4, p_names[2]: 6, p_names[3]: 8, p_names[4]: 10, p_names[5]: 12, p_names[6]: 14}
@@ -134,6 +145,7 @@ try:
                     except: continue
                 st.session_state.calc_history.append({"ประเภทงาน": selected_work, "ปริมาณงาน": q_val, "เกณฑ์ต่อหน่วย": unit_ratios, "รายละเอียด": temp_details})
                 st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
         if st.session_state.calc_history:
             st.divider()
@@ -142,7 +154,7 @@ try:
                 with st.expander(f"🔹 {item['ประเภทงาน']} (จำนวน {item['ปริมาณงาน']:,} หน่วย)"):
                     calc_table = [{"รายการวัสดุ": m, "รวมวัสดุที่ต้องใช้": f"{item['รายละเอียด'][m]:,.2f}"} for m in item['เกณฑ์ต่อหน่วย']]
                     st.table(pd.DataFrame(calc_table))
-                    if st.button(f"🗑️ ลบรายการ", key=f"del_{i}", use_container_width=False):
+                    if st.button(f"🗑️ ลบรายการ", key=f"del_{i}"):
                         st.session_state.calc_history.pop(i)
                         st.rerun()
 
@@ -160,25 +172,24 @@ try:
                     "แผนงาน": f"{plan_val:,.2f}",
                     "ใช้จริง": f"{actual_val:,.2f}",
                     "ส่วนต่าง": f"{diff:,.2f}",
-                    "สถานะ": "✅น้อยกว่าหรือเท่ากับแผน" if diff >= 0 else "⚠️ เกินแผน"
+                    "สถานะ": "✅ น้อยกว่าหรือเท่ากับแผน" if diff >= 0 else "⚠️ เกินแผน"
                 })
             st.table(pd.DataFrame(df_comp_data))
 
-            # --- จุดที่ปรับปรุง: วางปุ่มให้อยู่กึ่งกลางหน้าจอและติดกัน ---
-            # สร้าง columns แบบสมดุล [ซ้าย, ปุ่ม1, ปุ่ม2, ขวา]
-            st.write("") # เว้นระยะบรรทัดเล็กน้อย
+            # --- ส่วนท้าย: ปุ่มดาวน์โหลดและล้างข้อมูล (กึ่งกลางและติดกัน) ---
+            st.markdown('<div class="center-btn-container">', unsafe_allow_html=True)
             c_left, c_btn1, c_btn2, c_right = st.columns([1, 1, 1, 1])
             
             with c_btn1:
                 df_detailed_ex = pd.DataFrame([{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history])
                 excel_data = to_excel(df_detailed_ex, pd.DataFrame(df_comp_data))
-                st.download_button(label="📥 ดาวน์โหลดไฟล์ Excel", data=excel_data, file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx', use_container_width=False)
+                st.download_button(label="📥 ดาวน์โหลดไฟล์ Excel", data=excel_data, file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx')
             
             with c_btn2:
-                if st.button("🚫 ล้างข้อมูลทั้งหมด", use_container_width=False):
+                if st.button("🚫 ล้างข้อมูลทั้งหมด"):
                     st.session_state.calc_history = []
                     st.rerun()
-            # -------------------------------------------------------
+            st.markdown('</div>', unsafe_allow_html=True)
 
     else:
         st.error("❌ ไม่พบไฟล์ CSV")
