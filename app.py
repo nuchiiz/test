@@ -6,12 +6,13 @@ import io
 # 1. ตั้งค่าหน้าจอ
 st.set_page_config(page_title="ระบบควบคุมวัสดุ Pro V.2", layout="wide")
 
-# CSS: ตกแต่ง UI และปรับขนาดปุ่ม
+# CSS: ปรับแก้ให้ปุ่มมีขนาด auto (หดตามตัวอักษร) และดูมืออาชีพขึ้น
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
     html, body, [class*="css"] { font-family: 'Sarabun', sans-serif; }
     
+    /* ปรับแต่งช่อง Input */
     .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
         font-size: 18px !important;
         font-weight: bold !important;
@@ -20,19 +21,42 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    div.stButton > button {
-        width: 100%; height: 3.0rem; border-radius: 8px !important;
-        background-color: #007bff; color: white; border: 1px solid #000; font-weight: bold;
+    /* ปรับแต่งปุ่มให้เป็นขนาด Auto (ไม่เต็มความกว้างคอลัมน์) */
+    div.stButton > button, div.stDownloadButton > button {
+        width: auto !important;          /* ให้ขนาดหดตามข้อความ */
+        min-width: 150px !important;     /* กำหนดขนาดขั้นต่ำเพื่อให้ดูไม่เล็กเกินไป */
+        padding-left: 30px !important;   /* เพิ่มพื้นที่ว่างซ้าย-ขวาภายในปุ่ม */
+        padding-right: 30px !important;
+        height: 3.0rem; 
+        border-radius: 8px !important;
+        background-color: #007bff; 
+        color: white; 
+        border: 1px solid #000; 
+        font-weight: bold;
+        transition: 0.3s;
+        display: block;
+        margin: 0 auto;                  /* จัดปุ่มให้อยู่กึ่งกลางในบางกรณี */
     }
     
+    /* เอฟเฟกต์ Hover */
+    div.stButton > button:hover, div.stDownloadButton > button:hover {
+        border-color: #007bff;
+        color: #007bff;
+        background-color: white;
+    }
+
+    /* ปุ่มล้างข้อมูล (สีแดง) */
     div.stButton > button[kind="secondary"] {
-        background-color: #dc3545; color: white; border: 1px solid #000;
+        background-color: #dc3545 !important;
+        color: white !important;
     }
 
     .ref-box {
         background-color: #e9ecef; padding: 15px; border-radius: 8px; 
         border-left: 6px solid #007bff; margin-bottom: 25px;
     }
+    
+    .stTable { width: 100%; border: 1px solid #000; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -58,6 +82,16 @@ if 'calc_history' not in st.session_state:
 
 st.markdown("<h1>🏗️ ตารางคำนวณอัตราราคางานคอนกรีตและหิน</h1>", unsafe_allow_html=True)
 
+st.markdown("""
+    <div class="ref-box">
+        📖 <b>เอกสารอ้างอิง:</b> 
+        <a href="https://drive.google.com/file/d/1ibHbb81wjwqaDa3ab-VsDDwR-qvUx5FM/view" target="_blank" style="text-decoration: none; color: #007bff; font-weight: bold;">
+            หลักเกณฑ์การคำนวณราคากลางงานก่อสร้างชลประทาน (ตุลาคม 2560)
+        </a>
+        <br><small><i>*อ้างอิงตามบัญชีท้ายหลักเกณฑ์ฯ หน้า 217 "ตารางคำนวณอัตราราคางานคอนกรีตและหิน งานก่อสร้างชลประทาน"</i></small>
+    </div>
+""", unsafe_allow_html=True)
+
 try:
     df = load_data()
     if df is not None:
@@ -73,19 +107,20 @@ try:
             planned_values = {}
             for i, name in enumerate(p_names):
                 val = col_plan[i % 4].number_input(f"{name}", min_value=0.0, value=0.0, format="%.2f", key=f"p_{i}")
-                # ป้องกัน Error โดยใช้ 'or 0.0' เผื่อค่าหลุดเป็น None
                 planned_values[name] = val if val is not None else 0.0
 
         st.divider()
 
         st.markdown("### ➕ 2. รายการงานก่อสร้าง")
+        # ปรับสัดส่วนคอลัมน์ เพื่อให้ปุ่มดูเหมาะสม
         col_in1, col_in2, col_in3 = st.columns([2.5, 1, 1]) 
         work_list = df[0].dropna().unique().tolist()
         selected_work = col_in1.selectbox("เลือกประเภทงาน:", work_list)
         q_val_input = col_in2.number_input("ปริมาณงานที่ทำจริง:", min_value=0.0, value=0.0, format="%.2f", key="work_qty")
         q_val = q_val_input if q_val_input is not None else 0.0
         
-        if col_in3.button("➕ เพิ่มรายการ", use_container_width=True):
+        # ปิด use_container_width เพื่อให้ปุ่มหดตาม CSS width: auto
+        if col_in3.button("➕ เพิ่มรายการ", use_container_width=False):
             if q_val > 0:
                 selected_row = df[df[0] == selected_work].iloc[0]
                 m_idx_map = {p_names[0]: 2, p_names[1]: 4, p_names[2]: 6, p_names[3]: 8, p_names[4]: 10, p_names[5]: 12, p_names[6]: 14}
@@ -108,7 +143,7 @@ try:
                 with st.expander(f"🔹 {item['ประเภทงาน']} (จำนวน {item['ปริมาณงาน']:,} หน่วย)"):
                     calc_table = [{"รายการวัสดุ": m, "เกณฑ์ต่อหน่วย (A)": f"{item['เกณฑ์ต่อหน่วย'][m]:,.3f}", "ปริมาณงานจริง (B)": f"{item['ปริมาณงาน']:,.2f}", "รวมวัสดุที่ต้องใช้": f"{item['รายละเอียด'][m]:,.2f}"} for m in item['เกณฑ์ต่อหน่วย']]
                     st.table(pd.DataFrame(calc_table))
-                    if st.button(f"🗑️ ลบรายการ", key=f"del_{i}"):
+                    if st.button(f"🗑️ ลบรายการ", key=f"del_{i}", use_container_width=False):
                         st.session_state.calc_history.pop(i)
                         st.rerun()
 
@@ -118,28 +153,29 @@ try:
             
             df_comp_data = []
             for name in p_names:
-                # แก้ไขจุดเสี่ยง Error: ลบค่า None ด้วยการใช้ or 0.0
-                plan_val = planned_values.get(name) if planned_values.get(name) is not None else 0.0
+                plan_val = planned_values.get(name, 0.0)
                 actual_val = totals.get(name, 0.0)
-                diff = plan_val - actual_val  # จะไม่เกิด Error แล้วเพราะทั้งคู่เป็น float
-                
+                diff = plan_val - actual_val
                 df_comp_data.append({
                     "รายการวัสดุ": name,
                     "แผนงาน (Planned)": f"{plan_val:,.2f}",
                     "คำนวณจริง (Actual)": f"{actual_val:,.2f}",
                     "ส่วนต่าง (+เหลือ/-เกิน)": f"{diff:,.2f}",
-                    "สถานะ": "✅ ปกติ" if diff >= 0 else "⚠️ เกินกว่าแผน"
+                    "สถานะ": "✅ น้อยกว่าหรือเท่ากับแผน" if diff >= 0 else "⚠️ เกินกว่าแผน"
                 })
             
             st.table(pd.DataFrame(df_comp_data))
 
+            # แถวปุ่มด้านล่าง - ปรับให้หดตัวและจัดวางแบบกึ่งกลางคอลัมน์
             col_dl1, col_dl2 = st.columns(2)
+            
             with col_dl1:
                 df_detailed_ex = pd.DataFrame([{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history])
                 excel_data = to_excel(df_detailed_ex, pd.DataFrame(df_comp_data))
-                st.download_button(label="📥 ดาวน์โหลดไฟล์ Excel", data=excel_data, file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx', use_container_width=True)
+                st.download_button(label="📥 ดาวน์โหลดไฟล์ Excel", data=excel_data, file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx', use_container_width=False)
+            
             with col_dl2:
-                if st.button("🚫 ล้างข้อมูลทั้งหมด", use_container_width=True):
+                if st.button("🚫 ล้างข้อมูลทั้งหมด", use_container_width=False):
                     st.session_state.calc_history = []
                     st.rerun()
     else:
