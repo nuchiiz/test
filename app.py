@@ -173,16 +173,16 @@ try:
                 })
             st.table(pd.DataFrame(df_comp_data))
 
-            # --- ส่วนที่ 4: ปุ่มดาวน์โหลดและล้างข้อมูล (กึ่งกลางและติดกัน) ---
-            st.markdown('<div class="center-btn-group">', unsafe_allow_html=True)
-            col_b1, col_b2 = st.columns([1, 1]) # ใช้ column เพื่อจัดโครงสร้างภายใน flex
+           # --- ส่วนท้าย: ปุ่มดาวน์โหลดและล้างข้อมูล (กึ่งกลางและติดกัน) ---
+            st.markdown('<div class="center-btn-container">', unsafe_allow_html=True)
+            c_left, c_btn1, c_btn2, c_right = st.columns([1, 1, 1, 1])
             
-            with col_b1:
+            with c_btn1:
                 df_detailed_ex = pd.DataFrame([{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history])
                 excel_data = to_excel(df_detailed_ex, pd.DataFrame(df_comp_data))
                 st.download_button(label="📥 ดาวน์โหลดไฟล์ Excel", data=excel_data, file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx')
             
-            with col_b2:
+            with c_btn2:
                 if st.button("🚫 ล้างข้อมูลทั้งหมด"):
                     st.session_state.calc_history = []
                     st.rerun()
