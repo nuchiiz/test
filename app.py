@@ -37,7 +37,7 @@ st.markdown("""
     /* จัดระเบียบปุ่ม "เพิ่มรายการ" (ส่วนที่ 2) */
     .add-btn-container div.stButton > button {
         margin-top: 28px !important; /* ดันลงมาให้ตรงกับช่องที่มี Label */
-        width: 100% !important;
+        width: auto !important;
     }
 
     /* จัดระเบียบปุ่มตอนท้าย (ส่วนที่ 4) ให้กึ่งกลางและหดตามตัวอักษร */
@@ -54,9 +54,9 @@ st.markdown("""
         padding: 0 30px !important;
     }
 
-    /* ปุ่มสีแดง */
+    /* ปุ่มสีฟ้า */
     div.stButton > button[kind="secondary"] {
-        background-color: #dc3545 !important;
+        background-color: #039be5 !important;
         color: white !important;
     }
 
