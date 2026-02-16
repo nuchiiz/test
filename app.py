@@ -12,10 +12,9 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
     html, body, [class*="css"] { 
         font-family: 'Sarabun', sans-serif; 
-        background-color: #ffffff !important; 
     }
-    [data-testid="column"] { display: flex; align-items: flex-end; }
     
+    /* ปรับแต่งช่อง Input */
     .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
         font-size: 18px !important;
         font-weight: bold !important;
@@ -23,18 +22,32 @@ st.markdown("""
         border: 2px solid #000000 !important; 
         border-radius: 8px !important;
     }
-    
-    ::placeholder { color: #aaaaaa !important; opacity: 1; }
 
-    .stTable { width: 100%; border: 1px solid #000; }
-    .stTable th { text-align: center !important; background-color: #f2f2f2 !important; border: 1px solid #000 !important; }
-    .stTable td { text-align: center !important; vertical-align: middle !important; border: 1px solid #ddd !important; }
-
+    /* ปรับแต่งปุ่มทั้งหมดให้มีขนาดมาตรฐาน */
     div.stButton > button {
-        width: 100%; height: 3.0rem; border-radius: 8px !important;
-        background-color: #007bff; color: white; border: 1px solid #000; font-weight: bold;
+        width: 100%; 
+        height: 3.0rem; 
+        border-radius: 8px !important;
+        background-color: #007bff; 
+        color: white; 
+        border: 1px solid #000; 
+        font-weight: bold;
+        transition: 0.3s;
     }
     
+    /* เอฟเฟกต์ Hover */
+    div.stButton > button:hover {
+        border-color: #007bff;
+        color: #007bff;
+        background-color: white;
+    }
+
+    /* ปรับแต่งปุ่มล้างข้อมูล (Primary สีแดง) */
+    div.stButton > button[kind="secondary"] {
+        background-color: #dc3545;
+        color: white;
+    }
+
     .ref-box {
         background-color: #e9ecef; 
         padding: 15px; 
@@ -43,7 +56,7 @@ st.markdown("""
         margin-bottom: 25px;
     }
     
-    .stExpander { border: 2px solid #000000 !important; background-color: #ffffff !important; border-radius: 10px !important; }
+    .stTable { width: 100%; border: 1px solid #000; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -65,7 +78,6 @@ def to_excel(df_detailed, df_summary):
         df_detailed.to_excel(writer, sheet_name='รายการงานย่อย', index=False)
     return output.getvalue()
 
-# บรรทัดที่ 72: แก้ไขโครงสร้าง Session State
 if 'calc_history' not in st.session_state:
     st.session_state.calc_history = []
 
@@ -95,10 +107,8 @@ try:
             col_plan = st.columns(4) 
             planned_values = {}
             for i, name in enumerate(p_names):
-                val = col_plan[i % 4].number_input(
-                    f"{name}", min_value=0.0, value=None, placeholder="0.00", format="%.2f", key=f"p_{i}"
-                )
-                planned_values[name] = round(val, 2) if val is not None else 0.0
+                val = col_plan[i % 4].number_input(f"{name}", min_value=0.0, format="%.2f", key=f"p_{i}")
+                planned_values[name] = val
 
         st.divider()
 
@@ -106,10 +116,7 @@ try:
         col_in1, col_in2, col_in3 = st.columns([2.5, 1, 1]) 
         work_list = df[0].dropna().unique().tolist()
         selected_work = col_in1.selectbox("เลือกประเภทงาน:", work_list)
-        q_val_input = col_in2.number_input(
-            "ปริมาณงานที่ทำจริง:", min_value=0.0, value=None, placeholder="0.00", format="%.2f", key="work_qty"
-        )
-        q_val = q_val_input if q_val_input is not None else 0.0
+        q_val = col_in2.number_input("ปริมาณงานที่ทำจริง:", min_value=0.0, format="%.2f", key="work_qty")
         
         if col_in3.button("➕ เพิ่มรายการ", use_container_width=True):
             if q_val > 0:
@@ -124,40 +131,24 @@ try:
                             if val_str and val_str not in ["nan", "-"]:
                                 ratio = float(val_str)
                                 unit_ratios[m_name] = ratio
-                                temp_details[m_name] = round(ratio * q_val, 2)
-                        except:
-                            continue
-                st.session_state.calc_history.append({
-                    "ประเภทงาน": selected_work, "ปริมาณงาน": round(q_val, 2), 
-                    "เกณฑ์ต่อหน่วย": unit_ratios, "รายละเอียด": temp_details
-                })
+                                temp_details[m_name] = ratio * q_val
+                        except: continue
+                st.session_state.calc_history.append({"ประเภทงาน": selected_work, "ปริมาณงาน": q_val, "เกณฑ์ต่อหน่วย": unit_ratios, "รายละเอียด": temp_details})
                 st.rerun()
 
         if st.session_state.calc_history:
             st.markdown("### 📋 3. รายละเอียดการคำนวณแต่ละรายการ")
             for i, item in enumerate(st.session_state.calc_history):
-                ratios = item.get('เกณฑ์ต่อหน่วย', {})
                 with st.expander(f"🔹 {item['ประเภทงาน']} (จำนวน {item['ปริมาณงาน']:,} หน่วย)"):
-                    if ratios:
-                        calc_table = []
-                        for m_n in p_names:
-                            if m_n in ratios:
-                                calc_table.append({
-                                    "รายการวัสดุ": m_n,
-                                    "เกณฑ์ต่อหน่วย (A)": f"{ratios[m_n]:,.3f}",
-                                    "ปริมาณงานจริง (B)": f"{item['ปริมาณงาน']:,.2f}",
-                                    "รวมวัสดุที่ต้องใช้ (A x B)": f"{item['รายละเอียด'].get(m_n, 0):,.2f}"
-                                })
-                        st.table(pd.DataFrame(calc_table))
-                    
+                    calc_table = [{"รายการวัสดุ": m_n, "เกณฑ์ต่อหน่วย (A)": f"{item['เกณฑ์ต่อหน่วย'][m_n]:,.3f}", "ปริมาณงานจริง (B)": f"{item['ปริมาณงาน']:,.2f}", "รวมวัสดุที่ต้องใช้": f"{item['รายละเอียด'][m_n]:,.2f}"} for m_n in item['เกณฑ์ต่อหน่วย']]
+                    st.table(pd.DataFrame(calc_table))
                     if st.button(f"🗑️ ลบรายการ", key=f"del_{i}"):
                         st.session_state.calc_history.pop(i)
                         st.rerun()
 
             st.divider()
-            
             st.markdown("### 📊 4. สรุปยอดรวมวัสดุสะสมเปรียบเทียบแผนงานจัดซื้อจัดจ้าง")
-            totals = {k: round(sum(item['รายละเอียด'].get(k, 0.0) for item in st.session_state.calc_history), 2) for k in p_names}
+            totals = {k: sum(item['รายละเอียด'].get(k, 0.0) for item in st.session_state.calc_history) for k in p_names}
             
             df_comp = pd.DataFrame([{
                 "รายการวัสดุ": name,
@@ -168,12 +159,14 @@ try:
             } for name in p_names])
             st.table(df_comp)
 
+            # ส่วนปุ่มดาวน์โหลดและล้างข้อมูล
             col_dl1, col_dl2 = st.columns(2)
             df_detailed_ex = pd.DataFrame([{"งาน": i['ประเภทงาน'], "จำนวน": i['ปริมาณงาน'], **i['รายละเอียด']} for i in st.session_state.calc_history])
             excel_data = to_excel(df_detailed_ex, df_comp)
             
             col_dl1.download_button(label="📥 ดาวน์โหลดไฟล์ Excel", data=excel_data, file_name=f'Report_{datetime.now().strftime("%Y%m%d")}.xlsx', use_container_width=True)
-            if col_dl2.button("🚫 ล้างข้อมูลทั้งหมด"):
+            
+            if col_dl2.button("🚫 ล้างข้อมูลทั้งหมด", use_container_width=True):
                 st.session_state.calc_history = []
                 st.rerun()
     else:
